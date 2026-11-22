@@ -69,53 +69,6 @@
       background: #000;
     }
 
-    /* ===================== iOS / TOUCH TAP-TO-PLAY OVERLAY ===================== */
-    .ios-tap-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      cursor: pointer;
-    }
-    .ios-tap-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      background: rgba(255, 255, 255, 0.16);
-      border: 1px solid rgba(255, 255, 255, 0.32);
-      padding: 28px 36px;
-      border-radius: 24px;
-      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
-      text-align: center;
-      color: #fff;
-      animation: pulseTap 1.8s infinite ease-in-out;
-    }
-    @keyframes pulseTap {
-      0%, 100% { transform: scale(1); box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6); }
-      50% { transform: scale(1.04); box-shadow: 0 24px 56px rgba(255, 255, 255, 0.18); }
-    }
-    .ios-tap-icon {
-      font-size: 42px;
-      line-height: 1;
-    }
-    .ios-tap-title {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-    .ios-tap-desc {
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.75);
-      max-width: 260px;
-      line-height: 1.4;
-    }
-
     /* ===================== CINEMATIC BACKDROP ===================== */
     .bg {
       position: fixed;
@@ -1632,14 +1585,7 @@
 
   <!-- 1. VIDEO PLANE (Sits under the UI, shows through on Live TV, Guide & Fullscreen Player) -->
   <div id="video-plane">
-    <video id="daisy-video" playsinline webkit-playsinline x5-playsinline preload="auto"></video>
-    <div id="ios-tap-overlay" class="ios-tap-overlay" onclick="handleIosUserTapPlay()">
-      <div class="ios-tap-card">
-        <div class="ios-tap-icon">▶</div>
-        <div class="ios-tap-title">Tap to Play Stream</div>
-        <div class="ios-tap-desc">Tap once to enable video & audio playback on iPhone / iPad</div>
-      </div>
-    </div>
+    <video id="daisy-video" playsinline></video>
   </div>
 
   <!-- 2. CINEMATIC ARTWORK BACKDROP -->
@@ -1734,8 +1680,6 @@
             <input type="range" id="lv-vol-slider" class="vol-pill__slider focusable" min="0" max="100" step="1" value="100" oninput="setVolumePercent(this.value)" title="Volume" />
             <span class="vol-pill__pct" id="lv-vol-pct">100%</span>
           </div>
-          <button class="chip focusable" tabindex="0" onclick="openCurrentStreamInVlc()" title="Play in VLC for iOS / Mobile">🟠 VLC</button>
-          <button class="chip focusable" tabindex="0" onclick="openCurrentStreamInOutplayer()" title="Play in Outplayer for iOS">⚪ Outplayer</button>
         </div>
       </div>
 
@@ -1991,8 +1935,6 @@
           <span class="vol-pill__pct" id="osd-vol-pct">100%</span>
         </div>
         <button class="pv__btn focusable" onclick="toggleBrowserFullscreen()" title="Fullscreen">⛶</button>
-        <button class="pv__btn focusable" onclick="openCurrentStreamInVlc()" title="Open in VLC App (iPhone / iPad / Mac)">🟠 VLC</button>
-        <button class="pv__btn focusable" onclick="openCurrentStreamInOutplayer()" title="Open in Outplayer App (iPhone / iPad)">⚪ Outplayer</button>
       </div>
     </div>
 
@@ -2867,66 +2809,6 @@
     }
   }
 
-  function showIosTapOverlay() {
-    const o = document.getElementById('ios-tap-overlay');
-    if (o) o.style.display = 'flex';
-  }
-
-  function hideIosTapOverlay() {
-    const o = document.getElementById('ios-tap-overlay');
-    if (o) o.style.display = 'none';
-  }
-
-  function handleIosUserTapPlay() {
-    const v = document.getElementById('daisy-video');
-    hideIosTapOverlay();
-    if (!v) return;
-    v.muted = false;
-    const p = v.play();
-    if (p && p.catch) {
-      p.catch(() => {
-        v.muted = true;
-        v.play().catch(() => {});
-      });
-    }
-  }
-
-  function openCurrentStreamInVlc() {
-    if (!state.activeStreamUrl) {
-      showToast('Select a channel or video first.');
-      return;
-    }
-    const prof = getActiveProfile();
-    const isLive = state.isLiveStream;
-    let urlToOpen = state.activeStreamUrl;
-    if (isLive) {
-      urlToOpen = urlToOpen.replace(/([?&])extension=ts\b/i, '$1extension=m3u8').replace(/\.ts(\?|$)/i, '.m3u8$1');
-    }
-    const fullProxied = `${window.location.origin}/api/stream?url=${encodeURIComponent(urlToOpen)}&mac=${encodeURIComponent(prof.mac)}&stbType=${encodeURIComponent(prof.stbType || 'MAG250')}&vod=${isLive ? 0 : 1}`;
-    showToast('Opening in VLC for iOS...');
-    const vlcUrl = `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(fullProxied)}`;
-    window.location.href = vlcUrl;
-    setTimeout(() => {
-      window.location.href = `vlc://${fullProxied}`;
-    }, 450);
-  }
-
-  function openCurrentStreamInOutplayer() {
-    if (!state.activeStreamUrl) {
-      showToast('Select a channel or video first.');
-      return;
-    }
-    const prof = getActiveProfile();
-    const isLive = state.isLiveStream;
-    let urlToOpen = state.activeStreamUrl;
-    if (isLive) {
-      urlToOpen = urlToOpen.replace(/([?&])extension=ts\b/i, '$1extension=m3u8').replace(/\.ts(\?|$)/i, '.m3u8$1');
-    }
-    const fullProxied = `${window.location.origin}/api/stream?url=${encodeURIComponent(urlToOpen)}&mac=${encodeURIComponent(prof.mac)}&stbType=${encodeURIComponent(prof.stbType || 'MAG250')}&vod=${isLive ? 0 : 1}`;
-    showToast('Opening in Outplayer for iOS...');
-    window.location.href = `outplayer://${fullProxied}`;
-  }
-
   function startVideoPlayback(rawStreamUrl, title, isLiveTs, seekOffsetSec = 0) {
     state.activeStreamUrl = rawStreamUrl;
     state.isLiveStream = Boolean(isLiveTs);
@@ -2935,20 +2817,7 @@
 
     const prof = getActiveProfile();
     const endpoint = normalizePortalEndpoint(prof.host);
-
-    const isAppleDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const videoEl = document.getElementById('daisy-video');
-    const canNativeHls = Boolean(videoEl && videoEl.canPlayType && videoEl.canPlayType('application/vnd.apple.mpegurl'));
-    const useNativeHls = isLiveTs && (isAppleDevice || !window.mpegts || !window.mpegts.isSupported()) && canNativeHls;
-
-    let targetStreamUrl = rawStreamUrl;
-    if (useNativeHls) {
-      targetStreamUrl = targetStreamUrl
-        .replace(/([?&])extension=ts\b/i, '$1extension=m3u8')
-        .replace(/\.ts(\?|$)/i, '.m3u8$1');
-    }
-
-    let proxiedUrl = `/api/stream?url=${encodeURIComponent(targetStreamUrl)}&mac=${encodeURIComponent(prof.mac)}&stbType=${encodeURIComponent(prof.stbType || 'MAG250')}`;
+    let proxiedUrl = `/api/stream?url=${encodeURIComponent(rawStreamUrl)}&mac=${encodeURIComponent(prof.mac)}&stbType=${encodeURIComponent(prof.stbType || 'MAG250')}`;
     if (!isLiveTs) {
       proxiedUrl += `&vod=1&ss=${Math.floor(state.vodSeekOffsetSec)}`;
       if (endpoint) proxiedUrl += `&endpoint=${encodeURIComponent(endpoint)}`;
@@ -2957,13 +2826,12 @@
         proxiedUrl += `&cmd=${encodeURIComponent(state.activeVodRequest.cmd)}`;
         proxiedUrl += `&series=${encodeURIComponent(state.activeVodRequest.series || '')}`;
       }
-    } else {
-      proxiedUrl += `&vod=0`;
     }
     proxiedUrl += `&_t=${Date.now()}`;
 
+    const videoEl = document.getElementById('daisy-video');
+
     destroyMpegtsPlayer();
-    hideIosTapOverlay();
     videoEl.pause();
     videoEl.removeAttribute('src');
     videoEl.playbackRate = Number(state.prefs.speed) || 1.0;
@@ -2974,39 +2842,12 @@
     document.getElementById('osd-title').textContent = title;
     document.getElementById('osd-badge').textContent = isLiveTs ? 'LIVE' : 'VOD';
     document.getElementById('lv-stream-info').textContent = isLiveTs
-      ? (useNativeHls ? 'Connecting Live TV • Apple HLS Native' : `Connecting Live TV • Engine: ${state.prefs.tvPlayer}`)
+      ? `Connecting Live TV • Engine: ${state.prefs.tvPlayer}`
       : `Connecting VOD • Direct Web Stream`;
     updateVodTimelineUi();
 
-    videoEl.onplaying = hideIosTapOverlay;
-
-    if (useNativeHls) {
-      // 1. Apple Native HLS (iOS Safari / iPadOS / macOS)
-      videoEl.src = proxiedUrl;
-      videoEl.onloadedmetadata = () => {
-        const resTxt = `${videoEl.videoWidth || ''}x${videoEl.videoHeight || ''}`;
-        document.getElementById('lv-stream-info').textContent = `PLAYING • ${resTxt} (Apple HLS Native)`;
-        document.getElementById('osd-sub').textContent = `Daisy IPTV • ${resTxt} HLS`;
-        hideIosTapOverlay();
-      };
-      videoEl.onerror = () => {
-        document.getElementById('lv-stream-info').textContent = 'Stream error on iOS • Tap VLC or Outplayer below';
-        showToast('Tip: On iPhone, tap "VLC" or "Outplayer" to play this channel directly!');
-      };
-      const playPromise = videoEl.play();
-      if (playPromise && playPromise.catch) {
-        playPromise.catch(() => {
-          videoEl.muted = true;
-          videoEl.play().catch(() => {
-            showIosTapOverlay();
-          });
-        });
-      }
-      return;
-    }
-
     if (!isLiveTs) {
-      // 2. VOD Playback via Native HTML5 Video with full HTTP Range seekability
+      // VOD Playback via Native HTML5 Video with full HTTP Range seekability
       videoEl.src = proxiedUrl;
 
       videoEl.onloadedmetadata = () => {
@@ -3017,7 +2858,6 @@
           try { videoEl.currentTime = state.vodSeekOffsetSec; } catch (e) {}
         }
         updateVodTimelineUi();
-        hideIosTapOverlay();
       };
 
       videoEl.onloadeddata = () => {
@@ -3043,24 +2883,19 @@
             mpegtsPlayer.attachMediaElement(videoEl);
             mpegtsPlayer.load();
             mpegtsPlayer.play().catch(() => {});
-            return;
           } catch (e) {}
         }
-        document.getElementById('lv-stream-info').textContent = 'Format notice: Tap "VLC" or "Outplayer" below to play on iOS';
-        showToast('Tip: On iPhone, tap "VLC" or "Outplayer" to play this video!');
       };
 
       const playPromise = videoEl.play();
       if (playPromise && playPromise.catch) {
         playPromise.catch(() => {
           videoEl.muted = true;
-          videoEl.play().catch(() => {
-            showIosTapOverlay();
-          });
+          videoEl.play().catch(() => {});
         });
       }
     } else {
-      // 3. Live TV Playback via mpegts.js for MPEG-2 Transport Stream (Chrome, Android, Edge, PC)
+      // Live TV Playback via mpegts.js for MPEG-2 Transport Stream
       if (window.mpegts && window.mpegts.isSupported()) {
         mpegtsPlayer = window.mpegts.createPlayer({
           type: 'mpegts',
@@ -3091,22 +2926,12 @@
         if (playPromise && playPromise.catch) {
           playPromise.catch(() => {
             videoEl.muted = true;
-            videoEl.play().catch(() => {
-              showIosTapOverlay();
-            });
+            videoEl.play().catch(() => {});
           });
         }
       } else {
         videoEl.src = proxiedUrl;
-        const playPromise = videoEl.play();
-        if (playPromise && playPromise.catch) {
-          playPromise.catch(() => {
-            videoEl.muted = true;
-            videoEl.play().catch(() => {
-              showIosTapOverlay();
-            });
-          });
-        }
+        videoEl.play().catch(() => {});
       }
     }
   }

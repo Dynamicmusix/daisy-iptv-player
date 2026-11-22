@@ -84,10 +84,6 @@ module.exports = (req, res) => {
   const stbType = reqUrl.searchParams.get('stbType') || 'MAG250';
   const rawPassthrough = reqUrl.searchParams.get('raw') === '1';
   const isVod = reqUrl.searchParams.get('vod') === '1';
-  const isHls =
-    streamUrl.includes('.m3u8') ||
-    streamUrl.includes('extension=m3u8') ||
-    streamUrl.includes('format=m3u8');
 
   if (!streamUrl) {
     res.writeHead(400, { 'Content-Type': 'text/plain' });
@@ -99,9 +95,9 @@ module.exports = (req, res) => {
     headers['Range'] = req.headers.range;
   }
 
-  // 1. VOD, HLS, or Range Requests: Direct high-speed byte-range / playlist proxy
-  // Supports native HTML5 video with seeking, hardware acceleration, iOS Safari HLS, and zero serverless timeouts
-  if (isVod || isHls || req.headers.range || rawPassthrough) {
+  // 1. VOD or Range Requests (Movies & Series): Direct high-speed byte-range proxy
+  // Supports native HTML5 video with seeking, hardware acceleration, and zero serverless timeouts
+  if (isVod || req.headers.range || rawPassthrough) {
     proxyStream(streamUrl, req.method, headers, (err, upstreamRes, upstreamReq) => {
       if (err) {
         res.writeHead(502, { 'Content-Type': 'text/plain' });
@@ -129,12 +125,10 @@ module.exports = (req, res) => {
       if (upstreamRes.headers['content-length']) {
         outHeaders['Content-Length'] = upstreamRes.headers['content-length'];
       }
-      if (isHls) {
-        outHeaders['Content-Type'] = 'application/vnd.apple.mpegurl';
-      } else if (upstreamRes.headers['content-type']) {
+      if (upstreamRes.headers['content-type']) {
         outHeaders['Content-Type'] = upstreamRes.headers['content-type'];
       } else {
-        outHeaders['Content-Type'] = isVod ? 'video/mp4' : 'video/mp2t';
+        outHeaders['Content-Type'] = 'video/mp4';
       }
 
       const statusCode = upstreamRes.statusCode || (req.headers.range ? 206 : 200);

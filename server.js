@@ -357,10 +357,6 @@ const server = http.createServer((req, res) => {
     const stbType = reqUrl.searchParams.get('stbType') || 'MAG250';
     const rawPassthrough = reqUrl.searchParams.get('raw') === '1';
     const isVod = reqUrl.searchParams.get('vod') === '1';
-    const isHls =
-      streamUrl.includes('.m3u8') ||
-      streamUrl.includes('extension=m3u8') ||
-      streamUrl.includes('format=m3u8');
     const seekSec = Math.max(0, parseFloat(reqUrl.searchParams.get('ss') || '0') || 0);
     const endpoint = reqUrl.searchParams.get('endpoint') || '';
     const token = reqUrl.searchParams.get('token') || '';
@@ -384,8 +380,8 @@ const server = http.createServer((req, res) => {
       headers['Range'] = req.headers.range;
     }
 
-    // 1. VOD, HLS, or Range Requests: Direct byte-range / playlist proxy for HTML5 video & iOS Safari
-    if (isVod || isHls || req.headers.range || rawPassthrough) {
+    // 1. VOD or Range Requests (Movies & Series): Direct byte-range proxy for HTML5 video
+    if (isVod || req.headers.range || rawPassthrough) {
       proxyHttpGet(
         streamUrl,
         headers,
@@ -416,12 +412,10 @@ const server = http.createServer((req, res) => {
           if (upstreamRes.headers['content-length']) {
             outHeaders['Content-Length'] = upstreamRes.headers['content-length'];
           }
-          if (isHls) {
-            outHeaders['Content-Type'] = 'application/vnd.apple.mpegurl';
-          } else if (upstreamRes.headers['content-type']) {
+          if (upstreamRes.headers['content-type']) {
             outHeaders['Content-Type'] = upstreamRes.headers['content-type'];
           } else {
-            outHeaders['Content-Type'] = isVod ? 'video/mp4' : 'video/mp2t';
+            outHeaders['Content-Type'] = 'video/mp4';
           }
 
           const statusCode = upstreamRes.statusCode || (req.headers.range ? 206 : 200);
