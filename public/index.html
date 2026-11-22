@@ -2307,11 +2307,24 @@
 
     const res = await fetch(url.toString());
     const text = await res.text();
-    if ((res.status === 401 || text.includes('Authorization failed')) && retryAuth && params.action !== 'handshake') {
+    if (!res.ok) {
+      let errMsg = text;
+      try {
+        const errObj = JSON.parse(text);
+        if (errObj && errObj.error) errMsg = errObj.error;
+      } catch (e) {}
+      throw new Error(errMsg || `Server returned HTTP ${res.status}`);
+    }
+    if (text.includes('Authorization failed') && retryAuth && params.action !== 'handshake') {
       await doHandshake();
       return portalApi(params, false);
     }
-    const json = JSON.parse(text);
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (e) {
+      throw new Error(`Portal response error: ${text.slice(0, 100)}`);
+    }
     return json.js;
   }
 

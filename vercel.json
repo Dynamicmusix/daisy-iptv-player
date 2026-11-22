@@ -1,21 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "api/portal.js": {
-      "maxDuration": 30
-    },
-    "api/stream.js": {
-      "maxDuration": 60
-    },
-    "api/stop-stream.js": {
-      "maxDuration": 10
-    }
-  },
-  "rewrites": [
-    { "source": "/api/portal", "destination": "/api/portal.js" },
-    { "source": "/api/stream", "destination": "/api/stream.js" },
-    { "source": "/api/stop-stream", "destination": "/api/stop-stream.js" }
-  ],
   "headers": [
     {
       "source": "/(.*)",
