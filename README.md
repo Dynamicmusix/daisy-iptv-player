@@ -53,8 +53,6 @@
 │   │   └── PortalClient.ts # Shared TypeScript Stalker/Ministra API client
 │   └── types/
 │       └── stb.ts        # TypeScript data models and profile interfaces
-├── App.tsx               # Universal React Native / Expo entry (Android TV, Mobile, Apple TV)
-├── app.json              # Expo application configuration
 ├── package.json          # Node.js project manifest and dependencies
 ├── server.js             # Standalone local Node.js server (port 3080)
 ├── vercel.json           # Vercel deployment routes and serverless configuration
