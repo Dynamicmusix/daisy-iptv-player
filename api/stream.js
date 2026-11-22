@@ -1,7 +1,7 @@
 /**
  * Daisy IPTV v1.0.0 - Vercel Serverless Function: /api/stream
- * Follows 302 edge redirects and streams MPEG-TS / MKV video.
- * Uses ffmpeg-static when available to copy H.264 video and transcode AC-3/MP2 audio to AAC.
+ * Handles Live TV (MPEG-TS) and VOD (Movies & Series) streams.
+ * Supports HTTP Range requests, 302 edge redirects, and audio transcoding when required.
  */
 
 const http = require('http');
@@ -27,7 +27,7 @@ function buildPortalHeaders(mac, stbType) {
   };
 }
 
-function proxyStreamGet(targetUrlStr, headers, cb, redirectCount = 0) {
+function proxyStream(targetUrlStr, method, headers, cb, redirectCount = 0) {
   if (redirectCount > 6) return cb(new Error('Too many redirects'));
   let parsed;
   try {
@@ -41,7 +41,7 @@ function proxyStreamGet(targetUrlStr, headers, cb, redirectCount = 0) {
     hostname: parsed.hostname,
     port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
     path: parsed.pathname + parsed.search,
-    method: 'GET',
+    method: method || 'GET',
     headers: { ...headers, Host: parsed.host },
   };
 
@@ -52,7 +52,7 @@ function proxyStreamGet(targetUrlStr, headers, cb, redirectCount = 0) {
     ) {
       upstreamRes.resume();
       const nextUrl = new URL(upstreamRes.headers.location, targetUrlStr).toString();
-      return proxyStreamGet(nextUrl, headers, cb, redirectCount + 1);
+      return proxyStream(nextUrl, method, headers, cb, redirectCount + 1);
     }
     cb(null, upstreamRes, upstreamReq);
   });
@@ -63,8 +63,15 @@ function proxyStreamGet(targetUrlStr, headers, cb, redirectCount = 0) {
 
 module.exports = (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Range, Accept, Origin, Content-Type, Authorization, X-Requested-With'
+  );
+  res.setHeader(
+    'Access-Control-Expose-Headers',
+    'Content-Range, Content-Length, Accept-Ranges'
+  );
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -77,7 +84,6 @@ module.exports = (req, res) => {
   const stbType = reqUrl.searchParams.get('stbType') || 'MAG250';
   const rawPassthrough = reqUrl.searchParams.get('raw') === '1';
   const isVod = reqUrl.searchParams.get('vod') === '1';
-  const seekSec = Math.max(0, parseFloat(reqUrl.searchParams.get('ss') || '0') || 0);
 
   if (!streamUrl) {
     res.writeHead(400, { 'Content-Type': 'text/plain' });
@@ -85,51 +91,70 @@ module.exports = (req, res) => {
   }
 
   const headers = buildPortalHeaders(mac, stbType);
-  if (req.headers.range && rawPassthrough) {
+  if (req.headers.range) {
     headers['Range'] = req.headers.range;
   }
 
-  if (isVod && seekSec > 0 && ffmpegPath && !rawPassthrough) {
-    try {
-      const ffArgs = [
-        '-hide_banner',
-        '-loglevel', 'error',
-        '-user_agent', headers['User-Agent'],
-        '-headers', `X-User-Agent: ${headers['X-User-Agent']}\r\nCookie: ${headers['Cookie']}\r\n`,
-        '-ss', String(seekSec),
-        '-fflags', '+genpts+igndts+discardcorrupt',
-        '-i', streamUrl,
-        '-map', '0:v:0',
-        '-map', '0:a:0?',
-        '-c:v', 'copy',
-        '-c:a', 'aac',
-        '-ac', '2',
-        '-ar', '44100',
-        '-b:a', '128k',
-        '-muxdelay', '0',
-        '-muxpreload', '0',
-        '-f', 'mpegts',
-        'pipe:1',
-      ];
-      const ffProc = spawn(ffmpegPath, ffArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
-      res.writeHead(200, {
+  // 1. VOD or Range Requests (Movies & Series): Direct high-speed byte-range proxy
+  // Supports native HTML5 video with seeking, hardware acceleration, and zero serverless timeouts
+  if (isVod || req.headers.range || rawPassthrough) {
+    proxyStream(streamUrl, req.method, headers, (err, upstreamRes, upstreamReq) => {
+      if (err) {
+        res.writeHead(502, { 'Content-Type': 'text/plain' });
+        return res.end(`Stream Error: ${err.message}`);
+      }
+
+      if (upstreamRes.statusCode && upstreamRes.statusCode >= 400) {
+        res.writeHead(upstreamRes.statusCode, { 'Content-Type': 'text/plain' });
+        return res.end(`Upstream returned HTTP ${upstreamRes.statusCode}`);
+      }
+
+      const outHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'no-store, no-cache',
-        'Content-Type': 'video/mp2t',
-        Connection: 'close',
-      });
-      ffProc.stdout.pipe(res);
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'Access-Control-Allow-Headers':
+          'Range, Accept, Origin, Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Expose-Headers': 'Content-Range, Content-Length, Accept-Ranges',
+        'Accept-Ranges': upstreamRes.headers['accept-ranges'] || 'bytes',
+        'Cache-Control': isVod ? 'public, max-age=3600' : 'no-cache, no-store',
+      };
+
+      if (upstreamRes.headers['content-range']) {
+        outHeaders['Content-Range'] = upstreamRes.headers['content-range'];
+      }
+      if (upstreamRes.headers['content-length']) {
+        outHeaders['Content-Length'] = upstreamRes.headers['content-length'];
+      }
+      if (upstreamRes.headers['content-type']) {
+        outHeaders['Content-Type'] = upstreamRes.headers['content-type'];
+      } else {
+        outHeaders['Content-Type'] = 'video/mp4';
+      }
+
+      const statusCode = upstreamRes.statusCode || (req.headers.range ? 206 : 200);
+      res.writeHead(statusCode, outHeaders);
+
+      if (req.method === 'HEAD') {
+        try {
+          upstreamRes.destroy();
+          upstreamReq.destroy();
+        } catch (e) {}
+        return res.end();
+      }
+
+      upstreamRes.pipe(res);
       req.on('close', () => {
-        try { ffProc.kill('SIGKILL'); } catch (e) {}
+        try {
+          upstreamRes.destroy();
+          upstreamReq.destroy();
+        } catch (e) {}
       });
-      ffProc.on('close', () => {
-        try { res.end(); } catch (e) {}
-      });
-      return;
-    } catch (e) {}
+    });
+    return;
   }
 
-  proxyStreamGet(streamUrl, headers, (err, upstreamRes, upstreamReq) => {
+  // 2. Live TV (MPEG-TS): Stream with audio transcoding (AAC) via FFmpeg or passthrough
+  proxyStream(streamUrl, 'GET', headers, (err, upstreamRes, upstreamReq) => {
     if (err) {
       res.writeHead(502, { 'Content-Type': 'text/plain' });
       return res.end(`Stream Error: ${err.message}`);
@@ -143,22 +168,38 @@ module.exports = (req, res) => {
     if (ffmpegPath && !rawPassthrough) {
       const ffArgs = [
         '-hide_banner',
-        '-loglevel', 'error',
-        '-fflags', '+genpts+igndts+nobuffer+discardcorrupt',
-        '-flags', 'low_delay',
-        '-analyzeduration', '1200000',
-        '-probesize', '1200000',
-        '-i', 'pipe:0',
-        '-map', '0:v:0',
-        '-map', '0:a:0?',
-        '-c:v', 'copy',
-        '-c:a', 'aac',
-        '-ac', '2',
-        '-ar', '44100',
-        '-b:a', '128k',
-        '-muxdelay', '0',
-        '-muxpreload', '0',
-        '-f', 'mpegts',
+        '-loglevel',
+        'error',
+        '-fflags',
+        '+genpts+igndts+nobuffer+discardcorrupt',
+        '-flags',
+        'low_delay',
+        '-analyzeduration',
+        '1200000',
+        '-probesize',
+        '1200000',
+        '-i',
+        'pipe:0',
+        '-map',
+        '0:v:0',
+        '-map',
+        '0:a:0?',
+        '-c:v',
+        'copy',
+        '-c:a',
+        'aac',
+        '-ac',
+        '2',
+        '-ar',
+        '44100',
+        '-b:a',
+        '128k',
+        '-muxdelay',
+        '0',
+        '-muxpreload',
+        '0',
+        '-f',
+        'mpegts',
         'pipe:1',
       ];
 
@@ -176,16 +217,23 @@ module.exports = (req, res) => {
         ffProc.stdout.pipe(res);
 
         const cleanup = () => {
-          try { ffProc.kill('SIGKILL'); } catch (e) {}
-          try { upstreamRes.destroy(); upstreamReq.destroy(); } catch (e) {}
+          try {
+            ffProc.kill('SIGKILL');
+          } catch (e) {}
+          try {
+            upstreamRes.destroy();
+            upstreamReq.destroy();
+          } catch (e) {}
         };
         req.on('close', cleanup);
         ffProc.on('close', () => {
-          try { res.end(); } catch (e) {}
+          try {
+            res.end();
+          } catch (e) {}
         });
         return;
       } catch (spawnErr) {
-        // Fallback to direct passthrough if serverless runtime restricts child binary
+        // Fallback to direct passthrough
       }
     }
 
@@ -201,7 +249,10 @@ module.exports = (req, res) => {
     res.writeHead(upstreamRes.statusCode || 200, outHeaders);
     upstreamRes.pipe(res);
     req.on('close', () => {
-      try { upstreamRes.destroy(); upstreamReq.destroy(); } catch (e) {}
+      try {
+        upstreamRes.destroy();
+        upstreamReq.destroy();
+      } catch (e) {}
     });
   });
 };

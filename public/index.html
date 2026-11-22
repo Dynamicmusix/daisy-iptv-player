@@ -2841,74 +2841,53 @@
     document.body.classList.toggle('is-live-playback', Boolean(isLiveTs));
     document.getElementById('osd-title').textContent = title;
     document.getElementById('osd-badge').textContent = isLiveTs ? 'LIVE' : 'VOD';
-    document.getElementById('lv-stream-info').textContent = `Connecting • Engine: ${state.prefs.tvPlayer} (FFmpeg H.264+AAC)`;
+    document.getElementById('lv-stream-info').textContent = isLiveTs
+      ? `Connecting Live TV • Engine: ${state.prefs.tvPlayer}`
+      : `Connecting VOD • Direct Web Stream`;
     updateVodTimelineUi();
 
     if (!isLiveTs) {
-      // Poll /api/stream-info to capture exact container Duration parsed by FFmpeg
-      [750, 1800, 3500].forEach((delayMs) => {
-        setTimeout(() => {
-          if (state.isLiveStream) return;
-          fetch('/api/stream-info')
-            .then((r) => r.json())
-            .then((info) => {
-              if (info && info.duration > 0 && isFinite(info.duration)) {
-                state.vodDurationSec = info.duration;
-                updateVodTimelineUi();
-              }
-            })
-            .catch(() => {});
-        }, delayMs);
-      });
-    }
+      // VOD Playback via Native HTML5 Video with full HTTP Range seekability
+      videoEl.src = proxiedUrl;
 
-    if (window.mpegts && window.mpegts.isSupported()) {
-      mpegtsPlayer = window.mpegts.createPlayer({
-        type: 'mpegts',
-        isLive: Boolean(isLiveTs),
-        url: proxiedUrl
-      }, {
-        enableWorker: false,
-        enableStashBuffer: false,
-        stashInitialSize: 128 * 1024,
-        liveBufferLatencyChasing: false,
-        autoCleanupSourceBuffer: true,
-        fixAudioTimestampGap: true
-      });
-      mpegtsPlayer.attachMediaElement(videoEl);
-
-      mpegtsPlayer.on(window.mpegts.Events.MEDIA_INFO, (mi) => {
-        const resTxt = `${mi.width || ''}x${mi.height || ''} (${mi.videoCodec || 'H.264'} / ${mi.audioCodec || 'AAC'})`;
-        document.getElementById('lv-stream-info').textContent = `PLAYING • ${resTxt}`;
-        document.getElementById('osd-sub').textContent = `Daisy IPTV • ${resTxt}`;
-      });
-
-      mpegtsPlayer.on(window.mpegts.Events.ERROR, (errType, errDetail) => {
-        document.getElementById('lv-stream-info').textContent = `Stream notice: ${errDetail || errType} — Click channel again to retry`;
-      });
-
-      let initialSyncDone = false;
-      const syncToBufferedStart = () => {
-        if (initialSyncDone) return;
-        try {
-          if (videoEl.buffered && videoEl.buffered.length > 0) {
-            const bStart = videoEl.buffered.start(0);
-            if (videoEl.currentTime < bStart) {
-              videoEl.currentTime = bStart + 0.05;
-            }
-            state.vodBaseVideoTime = videoEl.currentTime || 0;
-            initialSyncDone = true;
-            if (videoEl.paused) {
-              videoEl.play().catch(() => {});
-            }
-          }
-        } catch (e) {}
+      videoEl.onloadedmetadata = () => {
+        if (videoEl.duration && isFinite(videoEl.duration) && videoEl.duration > 0) {
+          state.vodDurationSec = videoEl.duration;
+        }
+        if (state.vodSeekOffsetSec > 0) {
+          try { videoEl.currentTime = state.vodSeekOffsetSec; } catch (e) {}
+        }
+        updateVodTimelineUi();
       };
-      videoEl.onprogress = syncToBufferedStart;
-      videoEl.onloadeddata = syncToBufferedStart;
 
-      mpegtsPlayer.load();
-      const playPromise = mpegtsPlayer.play();
+      videoEl.onloadeddata = () => {
+        const resTxt = `${videoEl.videoWidth || ''}x${videoEl.videoHeight || ''}`;
+        document.getElementById('lv-stream-info').textContent = `PLAYING • ${resTxt} (VOD Direct)`;
+        document.getElementById('osd-sub').textContent = `Daisy IPTV • ${resTxt} VOD`;
+      };
+
+      videoEl.onerror = () => {
+        // Fallback: If native playback encounters format error, try mpegtsPlayer if .ts stream
+        if (window.mpegts && window.mpegts.isSupported() && !mpegtsPlayer) {
+          try {
+            mpegtsPlayer = window.mpegts.createPlayer({
+              type: 'mpegts',
+              isLive: false,
+              url: proxiedUrl
+            }, {
+              enableWorker: false,
+              enableStashBuffer: false,
+              stashInitialSize: 128 * 1024,
+              autoCleanupSourceBuffer: true,
+            });
+            mpegtsPlayer.attachMediaElement(videoEl);
+            mpegtsPlayer.load();
+            mpegtsPlayer.play().catch(() => {});
+          } catch (e) {}
+        }
+      };
+
+      const playPromise = videoEl.play();
       if (playPromise && playPromise.catch) {
         playPromise.catch(() => {
           videoEl.muted = true;
@@ -2916,8 +2895,44 @@
         });
       }
     } else {
-      videoEl.src = proxiedUrl;
-      videoEl.play().catch(() => {});
+      // Live TV Playback via mpegts.js for MPEG-2 Transport Stream
+      if (window.mpegts && window.mpegts.isSupported()) {
+        mpegtsPlayer = window.mpegts.createPlayer({
+          type: 'mpegts',
+          isLive: true,
+          url: proxiedUrl
+        }, {
+          enableWorker: false,
+          enableStashBuffer: false,
+          stashInitialSize: 128 * 1024,
+          liveBufferLatencyChasing: false,
+          autoCleanupSourceBuffer: true,
+          fixAudioTimestampGap: true
+        });
+        mpegtsPlayer.attachMediaElement(videoEl);
+
+        mpegtsPlayer.on(window.mpegts.Events.MEDIA_INFO, (mi) => {
+          const resTxt = `${mi.width || ''}x${mi.height || ''} (${mi.videoCodec || 'H.264'} / ${mi.audioCodec || 'AAC'})`;
+          document.getElementById('lv-stream-info').textContent = `PLAYING • ${resTxt}`;
+          document.getElementById('osd-sub').textContent = `Daisy IPTV • ${resTxt}`;
+        });
+
+        mpegtsPlayer.on(window.mpegts.Events.ERROR, (errType, errDetail) => {
+          document.getElementById('lv-stream-info').textContent = `Stream notice: ${errDetail || errType} — Click channel again to retry`;
+        });
+
+        mpegtsPlayer.load();
+        const playPromise = mpegtsPlayer.play();
+        if (playPromise && playPromise.catch) {
+          playPromise.catch(() => {
+            videoEl.muted = true;
+            videoEl.play().catch(() => {});
+          });
+        }
+      } else {
+        videoEl.src = proxiedUrl;
+        videoEl.play().catch(() => {});
+      }
     }
   }
 
@@ -3394,11 +3409,11 @@
 
   function getEffectiveVodDuration() {
     const v = document.getElementById('daisy-video');
-    if (state.vodDurationSec && state.vodDurationSec > 0 && isFinite(state.vodDurationSec)) {
-      return state.vodDurationSec;
-    }
     if (v && isFinite(v.duration) && v.duration > 0 && v.duration < 86400 * 3) {
       return v.duration;
+    }
+    if (state.vodDurationSec && state.vodDurationSec > 0 && isFinite(state.vodDurationSec)) {
+      return state.vodDurationSec;
     }
     if (!state.isLiveStream) {
       return 5400; // Default 90-minute scrubbing window until container header probe finishes
@@ -3410,6 +3425,9 @@
     const v = document.getElementById('daisy-video');
     if (state.isLiveStream) {
       return (v && v.currentTime) || 0;
+    }
+    if (!mpegtsPlayer && v && isFinite(v.currentTime)) {
+      return v.currentTime;
     }
     const elapsed = v ? Math.max(0, (v.currentTime || 0) - (state.vodBaseVideoTime || 0)) : 0;
     return (state.vodSeekOffsetSec || 0) + elapsed;
@@ -3483,8 +3501,16 @@
     state.vodBaseVideoTime = v ? (v.currentTime || 0) : 0;
     state.isDraggingSeekSlider = false;
     updateVodTimelineUi();
-    showToast(`Seeking to ${formatMediaTime(clampedSec)}...`);
 
+    if (v && isFinite(v.duration) && v.duration > 0 && !mpegtsPlayer) {
+      try {
+        v.currentTime = clampedSec;
+        if (v.paused) v.play().catch(() => {});
+        return;
+      } catch (e) {}
+    }
+
+    showToast(`Seeking to ${formatMediaTime(clampedSec)}...`);
     const title = document.getElementById('osd-title')?.textContent || 'VOD Stream';
     const freshUrl = await resolveFreshVodStreamUrl();
     startVideoPlayback(freshUrl, title, false, clampedSec);

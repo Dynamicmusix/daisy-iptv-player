@@ -375,103 +375,75 @@ const server = http.createServer((req, res) => {
     activeStreamMeta.isVod = isVod;
     activeStreamMeta.seekSec = seekSec;
 
-    // VOD Stream with FFmpeg Range Seeking (-ss) & Smart Single-Use Token Proxy
-    if (isVod && ffmpegPath && !rawPassthrough) {
-      const sid = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      activeStreamMeta.vodSession = {
-        id: sid,
-        currentUrl: streamUrl,
-        urlUsedCount: 0,
-        mac,
-        stbType,
-        endpoint,
-        token,
-        cmd,
-        series,
-        activeUpstream: null,
-      };
+    const headers = buildPortalHeaders(mac, stbType, null, null);
+    if (req.headers.range) {
+      headers['Range'] = req.headers.range;
+    }
 
-      const localSourceUrl = `http://127.0.0.1:${PORT}/api/vod-source?sid=${sid}`;
-      const ffArgs = [
-        '-hide_banner',
-        '-loglevel', 'info',
-        ...(seekSec > 0 ? ['-ss', String(seekSec)] : []),
-        '-fflags', '+genpts+igndts+discardcorrupt',
-        '-i', localSourceUrl,
-        '-map', '0:v:0',
-        '-map', '0:a:0?',
-        '-c:v', 'copy',
-        '-c:a', 'aac',
-        '-ac', '2',
-        '-ar', '44100',
-        '-b:a', '128k',
-        '-muxdelay', '0',
-        '-muxpreload', '0',
-        '-f', 'mpegts',
-        'pipe:1',
-      ];
-
-      const ffEnv = Object.assign({}, process.env, {
-        HTTP_PROXY: '',
-        HTTPS_PROXY: '',
-        http_proxy: '',
-        https_proxy: '',
-      });
-
-      const ffProc = spawn(ffmpegPath, ffArgs, {
-        stdio: ['ignore', 'pipe', 'pipe'],
-        env: ffEnv,
-      });
-
-      activeUpstreamStream = { res: null, req: null, ffmpeg: ffProc };
-
-      ffProc.stderr.on('data', (chunk) => {
-        const s = chunk.toString();
-        const m = s.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
-        if (m) {
-          const durSec = Number(m[1]) * 3600 + Number(m[2]) * 60 + parseFloat(m[3]);
-          if (durSec > 0 && isFinite(durSec)) {
-            activeStreamMeta.duration = durSec;
+    // 1. VOD or Range Requests (Movies & Series): Direct byte-range proxy for HTML5 video
+    if (isVod || req.headers.range || rawPassthrough) {
+      proxyHttpGet(
+        streamUrl,
+        headers,
+        (err, upstreamRes, upstreamReq) => {
+          if (err) {
+            res.writeHead(502, { 'Content-Type': 'text/plain' });
+            return res.end(`Stream Error: ${err.message}`);
           }
-        }
-      });
 
-      res.writeHead(200, {
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'no-store, no-cache',
-        'Content-Type': 'video/mp2t',
-        Connection: 'close',
-      });
+          if (upstreamRes.statusCode && upstreamRes.statusCode >= 400) {
+            res.writeHead(upstreamRes.statusCode, { 'Content-Type': 'text/plain' });
+            return res.end(`Upstream returned HTTP ${upstreamRes.statusCode}`);
+          }
 
-      ffProc.stdout.pipe(res);
+          activeUpstreamStream = { res: upstreamRes, req: upstreamReq };
 
-      const cleanup = () => {
-        try { ffProc.kill('SIGKILL'); } catch (e) {}
-        if (activeStreamMeta.vodSession && activeStreamMeta.vodSession.id === sid) {
-          if (activeStreamMeta.vodSession.activeUpstream) {
+          const outHeaders = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+            'Access-Control-Allow-Headers': 'Range, Accept, Origin, Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Expose-Headers': 'Content-Range, Content-Length, Accept-Ranges',
+            'Accept-Ranges': upstreamRes.headers['accept-ranges'] || 'bytes',
+            'Cache-Control': isVod ? 'public, max-age=3600' : 'no-cache, no-store',
+          };
+          if (upstreamRes.headers['content-range']) {
+            outHeaders['Content-Range'] = upstreamRes.headers['content-range'];
+          }
+          if (upstreamRes.headers['content-length']) {
+            outHeaders['Content-Length'] = upstreamRes.headers['content-length'];
+          }
+          if (upstreamRes.headers['content-type']) {
+            outHeaders['Content-Type'] = upstreamRes.headers['content-type'];
+          } else {
+            outHeaders['Content-Type'] = 'video/mp4';
+          }
+
+          const statusCode = upstreamRes.statusCode || (req.headers.range ? 206 : 200);
+          res.writeHead(statusCode, outHeaders);
+
+          if (req.method === 'HEAD') {
+            try { upstreamRes.destroy(); upstreamReq.destroy(); } catch (e) {}
+            return res.end();
+          }
+
+          upstreamRes.pipe(res);
+          req.on('close', () => {
             try {
-              activeStreamMeta.vodSession.activeUpstream.res.destroy();
-              activeStreamMeta.vodSession.activeUpstream.req.destroy();
+              upstreamRes.destroy();
+              upstreamReq.destroy();
             } catch (e) {}
-          }
-          activeStreamMeta.vodSession = null;
-        }
-        if (activeUpstreamStream && activeUpstreamStream.ffmpeg === ffProc) {
-          activeUpstreamStream = null;
-        }
-      };
-
-      req.on('close', cleanup);
-      ffProc.on('close', () => {
-        try { res.end(); } catch (e) {}
-      });
+            if (activeUpstreamStream && activeUpstreamStream.res === upstreamRes) {
+              activeUpstreamStream = null;
+            }
+          });
+        },
+        0,
+        true
+      );
       return;
     }
 
-    const headers = buildPortalHeaders(mac, stbType, null, null);
-    if (req.headers.range && rawPassthrough) {
-      headers['Range'] = req.headers.range;
-    }
+    // 2. Live TV (MPEG-TS): Stream with audio transcoding (AAC) via FFmpeg or passthrough
 
     proxyHttpGet(
       streamUrl,
