@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "framework": null,
   "functions": {
     "api/portal.js": {
       "maxDuration": 30
