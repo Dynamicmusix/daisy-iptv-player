@@ -4,7 +4,7 @@
  */
 
 export type BoxModelType = 'MAG250' | 'MAG254' | 'MAG256' | 'MAG322' | 'MAG420' | 'MAG524';
-export type PlayerEngineType = 'VLC' | 'KSPlayer' | 'Native';
+export type PlayerEngineType = 'Auto' | 'FFmpeg' | 'Native';
 export type AspectRatioType = 'Auto' | 'Fit' | 'Full' | '16:9' | '4:3';
 export type SortByType = 'number' | 'name' | 'added' | 'default';
 

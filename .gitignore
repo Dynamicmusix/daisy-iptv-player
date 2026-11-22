@@ -9,6 +9,7 @@ dist/
 web-build/
 android/
 ios/
+APL-TV-main/
 
 # Binary Artifacts & Captures
 *.ipa

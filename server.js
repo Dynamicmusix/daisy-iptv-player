@@ -26,8 +26,21 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 3080;
 const WEB_DIR = path.join(__dirname, 'public');
 
 let activeUpstreamStream = null;
+let activeStreamMeta = {
+  duration: 0,
+  isVod: false,
+  seekSec: 0,
+  vodSession: null,
+};
 
 function stopActiveStream() {
+  if (activeStreamMeta.vodSession && activeStreamMeta.vodSession.activeUpstream) {
+    try {
+      if (activeStreamMeta.vodSession.activeUpstream.res) activeStreamMeta.vodSession.activeUpstream.res.destroy();
+      if (activeStreamMeta.vodSession.activeUpstream.req) activeStreamMeta.vodSession.activeUpstream.req.destroy();
+    } catch (e) {}
+    activeStreamMeta.vodSession.activeUpstream = null;
+  }
   if (activeUpstreamStream) {
     try {
       if (activeUpstreamStream.ffmpeg) {
@@ -179,21 +192,280 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ stopped: true }));
   }
 
+  // 2b. Active stream metadata (exact VOD duration parsed from FFmpeg container header)
+  if (reqUrl.pathname === '/api/stream-info') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache',
+    });
+    return res.end(
+      JSON.stringify({
+        duration: activeStreamMeta.duration || 0,
+        isVod: Boolean(activeStreamMeta.isVod),
+        seekSec: activeStreamMeta.seekSec || 0,
+      })
+    );
+  }
+
+  // 2c. Smart internal VOD HTTP Range proxy for FFmpeg (-ss fast seeking + single-use token rotation)
+  if (reqUrl.pathname === '/api/vod-source') {
+    const sid = reqUrl.searchParams.get('sid') || '';
+    const session = activeStreamMeta.vodSession;
+    if (!session || session.id !== sid) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      return res.end('VOD session expired');
+    }
+
+    // Close previous upstream Range connection immediately so max_connections=1 is respected
+    if (session.activeUpstream) {
+      try {
+        if (session.activeUpstream.res) session.activeUpstream.res.destroy();
+        if (session.activeUpstream.req) session.activeUpstream.req.destroy();
+      } catch (e) {}
+      session.activeUpstream = null;
+    }
+
+    const rangeHeader = req.headers.range || '';
+
+    const mintFreshVodTokenUrl = (cb) => {
+      if (!session.endpoint || !session.cmd) {
+        return cb(new Error('No portal endpoint/cmd for token refresh'));
+      }
+      try {
+        const portalUrl = new URL(session.endpoint);
+        portalUrl.searchParams.set('type', 'vod');
+        portalUrl.searchParams.set('action', 'create_link');
+        portalUrl.searchParams.set('cmd', session.cmd);
+        portalUrl.searchParams.set('series', session.series || '');
+        portalUrl.searchParams.set('forced_storage', '0');
+        portalUrl.searchParams.set('disable_ad', '0');
+        portalUrl.searchParams.set('download', '0');
+        portalUrl.searchParams.set('force_ch_link_check', '0');
+        portalUrl.searchParams.set('JsHttpRequest', '1-xml');
+
+        const pHeaders = buildPortalHeaders(session.mac, session.stbType, portalUrl.origin, session.token);
+        proxyHttpGet(portalUrl.toString(), pHeaders, (err, pRes) => {
+          if (err) return cb(err);
+          const chunks = [];
+          pRes.on('data', (c) => chunks.push(c));
+          pRes.on('end', () => {
+            try {
+              const json = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+              const rawCmd = (json && json.js && json.js.cmd) || '';
+              const freshUrl = rawCmd.replace(/^(ffmpeg|ffrt\d*|auto)\s+/i, '').trim();
+              if (!freshUrl.startsWith('http')) {
+                return cb(new Error('Invalid create_link response'));
+              }
+              session.currentUrl = freshUrl;
+              session.urlUsedCount = 0;
+              cb(null, freshUrl);
+            } catch (parseErr) {
+              cb(parseErr);
+            }
+          });
+        });
+      } catch (e) {
+        cb(e);
+      }
+    };
+
+    const fetchWithRange = (targetUrl, allowTokenRefresh) => {
+      const upHeaders = buildPortalHeaders(session.mac, session.stbType, null, null);
+      if (rangeHeader) {
+        upHeaders['Range'] = rangeHeader;
+      }
+      session.urlUsedCount = (session.urlUsedCount || 0) + 1;
+
+      proxyHttpGet(
+        targetUrl,
+        upHeaders,
+        (err, upRes, upReq) => {
+          if (err) {
+            if (allowTokenRefresh && session.endpoint && session.cmd) {
+              return mintFreshVodTokenUrl((mErr, freshUrl) => {
+                if (mErr || !freshUrl) {
+                  res.writeHead(502);
+                  return res.end('Upstream error');
+                }
+                fetchWithRange(freshUrl, false);
+              });
+            }
+            res.writeHead(502);
+            return res.end('Upstream error');
+          }
+
+          const ct = (upRes.headers['content-type'] || '').toLowerCase();
+          const cl = upRes.headers['content-length'];
+          const failedOrExpired =
+            (upRes.statusCode && upRes.statusCode >= 400) ||
+            cl === '0' ||
+            ct.includes('text/html');
+
+          if (failedOrExpired && allowTokenRefresh && session.endpoint && session.cmd) {
+            try {
+              upRes.destroy();
+              upReq.destroy();
+            } catch (e) {}
+            return mintFreshVodTokenUrl((mErr, freshUrl) => {
+              if (mErr || !freshUrl) {
+                res.writeHead(upRes.statusCode || 502);
+                return res.end('Token refresh failed');
+              }
+              fetchWithRange(freshUrl, false);
+            });
+          }
+
+          session.activeUpstream = { res: upRes, req: upReq };
+          const outHeaders = {
+            'Content-Type': upRes.headers['content-type'] || 'video/mp4',
+            'Accept-Ranges': upRes.headers['accept-ranges'] || 'bytes',
+          };
+          if (upRes.headers['content-length']) {
+            outHeaders['Content-Length'] = upRes.headers['content-length'];
+          }
+          if (upRes.headers['content-range']) {
+            outHeaders['Content-Range'] = upRes.headers['content-range'];
+          }
+
+          res.writeHead(upRes.statusCode || (rangeHeader ? 206 : 200), outHeaders);
+          upRes.pipe(res);
+
+          req.on('close', () => {
+            try {
+              upRes.destroy();
+              upReq.destroy();
+            } catch (e) {}
+            if (session.activeUpstream && session.activeUpstream.res === upRes) {
+              session.activeUpstream = null;
+            }
+          });
+        },
+        0,
+        true
+      );
+    };
+
+    // If initial token was already consumed by an earlier Range probe and we have create_link info, try current first and auto-refresh if rejected
+    fetchWithRange(session.currentUrl, true);
+    return;
+  }
+
   // 3. Live MPEG-TS / VOD Stream Proxy & FFmpeg Remuxer: /api/stream?url=...&mac=...
   if (reqUrl.pathname === '/api/stream') {
     const streamUrl = reqUrl.searchParams.get('url');
     const mac = reqUrl.searchParams.get('mac') || '00:1A:79:00:00:00';
     const stbType = reqUrl.searchParams.get('stbType') || 'MAG250';
-    const download = reqUrl.searchParams.get('download') === '1';
-    const rawPassthrough = reqUrl.searchParams.get('raw') === '1' || download;
+    const rawPassthrough = reqUrl.searchParams.get('raw') === '1';
+    const isVod = reqUrl.searchParams.get('vod') === '1';
+    const seekSec = Math.max(0, parseFloat(reqUrl.searchParams.get('ss') || '0') || 0);
+    const endpoint = reqUrl.searchParams.get('endpoint') || '';
+    const token = reqUrl.searchParams.get('token') || '';
+    const cmd = reqUrl.searchParams.get('cmd') || '';
+    const series = reqUrl.searchParams.get('series') || '';
 
     if (!streamUrl) {
       res.writeHead(400, { 'Content-Type': 'text/plain' });
       return res.end('Missing url parameter');
     }
 
-    if (!download) {
-      stopActiveStream();
+    stopActiveStream();
+    if (seekSec === 0) {
+      activeStreamMeta.duration = 0;
+    }
+    activeStreamMeta.isVod = isVod;
+    activeStreamMeta.seekSec = seekSec;
+
+    // VOD Stream with FFmpeg Range Seeking (-ss) & Smart Single-Use Token Proxy
+    if (isVod && ffmpegPath && !rawPassthrough) {
+      const sid = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      activeStreamMeta.vodSession = {
+        id: sid,
+        currentUrl: streamUrl,
+        urlUsedCount: 0,
+        mac,
+        stbType,
+        endpoint,
+        token,
+        cmd,
+        series,
+        activeUpstream: null,
+      };
+
+      const localSourceUrl = `http://127.0.0.1:${PORT}/api/vod-source?sid=${sid}`;
+      const ffArgs = [
+        '-hide_banner',
+        '-loglevel', 'info',
+        ...(seekSec > 0 ? ['-ss', String(seekSec)] : []),
+        '-fflags', '+genpts+igndts+discardcorrupt',
+        '-i', localSourceUrl,
+        '-map', '0:v:0',
+        '-map', '0:a:0?',
+        '-c:v', 'copy',
+        '-c:a', 'aac',
+        '-ac', '2',
+        '-ar', '44100',
+        '-b:a', '128k',
+        '-muxdelay', '0',
+        '-muxpreload', '0',
+        '-f', 'mpegts',
+        'pipe:1',
+      ];
+
+      const ffEnv = Object.assign({}, process.env, {
+        HTTP_PROXY: '',
+        HTTPS_PROXY: '',
+        http_proxy: '',
+        https_proxy: '',
+      });
+
+      const ffProc = spawn(ffmpegPath, ffArgs, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: ffEnv,
+      });
+
+      activeUpstreamStream = { res: null, req: null, ffmpeg: ffProc };
+
+      ffProc.stderr.on('data', (chunk) => {
+        const s = chunk.toString();
+        const m = s.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
+        if (m) {
+          const durSec = Number(m[1]) * 3600 + Number(m[2]) * 60 + parseFloat(m[3]);
+          if (durSec > 0 && isFinite(durSec)) {
+            activeStreamMeta.duration = durSec;
+          }
+        }
+      });
+
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-store, no-cache',
+        'Content-Type': 'video/mp2t',
+        Connection: 'close',
+      });
+
+      ffProc.stdout.pipe(res);
+
+      const cleanup = () => {
+        try { ffProc.kill('SIGKILL'); } catch (e) {}
+        if (activeStreamMeta.vodSession && activeStreamMeta.vodSession.id === sid) {
+          if (activeStreamMeta.vodSession.activeUpstream) {
+            try {
+              activeStreamMeta.vodSession.activeUpstream.res.destroy();
+              activeStreamMeta.vodSession.activeUpstream.req.destroy();
+            } catch (e) {}
+          }
+          activeStreamMeta.vodSession = null;
+        }
+        if (activeUpstreamStream && activeUpstreamStream.ffmpeg === ffProc) {
+          activeUpstreamStream = null;
+        }
+      };
+
+      req.on('close', cleanup);
+      ffProc.on('close', () => {
+        try { res.end(); } catch (e) {}
+      });
+      return;
     }
 
     const headers = buildPortalHeaders(mac, stbType, null, null);
@@ -269,9 +541,6 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        if (!download) {
-          activeUpstreamStream = { res: upstreamRes, req: upstreamReq, ffmpeg: null };
-        }
         const outHeaders = {
           'Access-Control-Allow-Origin': '*',
           'Cache-Control': 'no-cache',
@@ -285,10 +554,6 @@ const server = http.createServer((req, res) => {
         }
         if (upstreamRes.headers['accept-ranges']) {
           outHeaders['Accept-Ranges'] = upstreamRes.headers['accept-ranges'];
-        }
-        if (download) {
-          const ext = reqUrl.searchParams.get('ext') || 'ts';
-          outHeaders['Content-Disposition'] = `attachment; filename="daisy_iptv_record_${Date.now()}.${ext}"`;
         }
 
         res.writeHead(upstreamRes.statusCode || 200, outHeaders);

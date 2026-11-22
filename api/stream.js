@@ -75,8 +75,9 @@ module.exports = (req, res) => {
   const streamUrl = reqUrl.searchParams.get('url');
   const mac = reqUrl.searchParams.get('mac') || '00:1A:79:00:00:00';
   const stbType = reqUrl.searchParams.get('stbType') || 'MAG250';
-  const download = reqUrl.searchParams.get('download') === '1';
-  const rawPassthrough = reqUrl.searchParams.get('raw') === '1' || download;
+  const rawPassthrough = reqUrl.searchParams.get('raw') === '1';
+  const isVod = reqUrl.searchParams.get('vod') === '1';
+  const seekSec = Math.max(0, parseFloat(reqUrl.searchParams.get('ss') || '0') || 0);
 
   if (!streamUrl) {
     res.writeHead(400, { 'Content-Type': 'text/plain' });
@@ -86,6 +87,46 @@ module.exports = (req, res) => {
   const headers = buildPortalHeaders(mac, stbType);
   if (req.headers.range && rawPassthrough) {
     headers['Range'] = req.headers.range;
+  }
+
+  if (isVod && seekSec > 0 && ffmpegPath && !rawPassthrough) {
+    try {
+      const ffArgs = [
+        '-hide_banner',
+        '-loglevel', 'error',
+        '-user_agent', headers['User-Agent'],
+        '-headers', `X-User-Agent: ${headers['X-User-Agent']}\r\nCookie: ${headers['Cookie']}\r\n`,
+        '-ss', String(seekSec),
+        '-fflags', '+genpts+igndts+discardcorrupt',
+        '-i', streamUrl,
+        '-map', '0:v:0',
+        '-map', '0:a:0?',
+        '-c:v', 'copy',
+        '-c:a', 'aac',
+        '-ac', '2',
+        '-ar', '44100',
+        '-b:a', '128k',
+        '-muxdelay', '0',
+        '-muxpreload', '0',
+        '-f', 'mpegts',
+        'pipe:1',
+      ];
+      const ffProc = spawn(ffmpegPath, ffArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-store, no-cache',
+        'Content-Type': 'video/mp2t',
+        Connection: 'close',
+      });
+      ffProc.stdout.pipe(res);
+      req.on('close', () => {
+        try { ffProc.kill('SIGKILL'); } catch (e) {}
+      });
+      ffProc.on('close', () => {
+        try { res.end(); } catch (e) {}
+      });
+      return;
+    } catch (e) {}
   }
 
   proxyStreamGet(streamUrl, headers, (err, upstreamRes, upstreamReq) => {
@@ -155,10 +196,6 @@ module.exports = (req, res) => {
     };
     if (upstreamRes.headers['content-length']) {
       outHeaders['Content-Length'] = upstreamRes.headers['content-length'];
-    }
-    if (download) {
-      const ext = reqUrl.searchParams.get('ext') || 'ts';
-      outHeaders['Content-Disposition'] = `attachment; filename="daisy_iptv_record_${Date.now()}.${ext}"`;
     }
 
     res.writeHead(upstreamRes.statusCode || 200, outHeaders);

@@ -17,8 +17,7 @@
           "NSAllowsArbitraryLoads": true
         },
         "NSLocalNetworkUsageDescription": "Daisy IPTV uses the local network to connect to IPTV portals and discover Cast-enabled devices.",
-        "NSBluetoothAlwaysUsageDescription": "Daisy IPTV uses Bluetooth to play audio via wireless speakers and headphones.",
-        "LSApplicationQueriesSchemes": ["vlc", "vlc-x-callback"]
+        "NSBluetoothAlwaysUsageDescription": "Daisy IPTV uses Bluetooth to play audio via wireless speakers and headphones."
       }
     },
     "android": {

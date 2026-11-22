@@ -53,8 +53,8 @@ const DEFAULT_PROFILE: PortalProfile = {
 };
 
 const DEFAULT_PREFS: DaisyPreferences = {
-  tvPlayer: 'VLC',
-  vodPlayer: 'VLC',
+  tvPlayer: 'Auto',
+  vodPlayer: 'Auto',
   aspectRatio: 'Auto',
   sortBy: 'number',
   bufferSizeMs: 3000,
@@ -370,17 +370,9 @@ export default function App() {
                 {selectedChannel ? selectedChannel.name : 'Select a channel'}
               </Text>
               {activeStreamUrl ? (
-                <>
-                  <Text style={styles.streamUrlText} numberOfLines={2}>
-                    Engine: {prefs.tvPlayer} • Aspect: {prefs.aspectRatio} • Buffer: {prefs.bufferSizeMs}ms
-                  </Text>
-                  <Pressable
-                    style={styles.vlcBtn}
-                    onPress={() => Linking.openURL(`vlc://${activeStreamUrl}`)}
-                  >
-                    <Text style={styles.topBtnText}>▶ OPEN IN VLC / NATIVE PLAYER</Text>
-                  </Pressable>
-                </>
+                <Text style={styles.streamUrlText} numberOfLines={2}>
+                  Engine: {prefs.tvPlayer} • Aspect: {prefs.aspectRatio} • Buffer: {prefs.bufferSizeMs}ms
+                </Text>
               ) : null}
             </View>
 
@@ -390,9 +382,6 @@ export default function App() {
               </Pressable>
               <Pressable style={styles.smallBtn} onPress={() => setRoute('EPG_GRID')}>
                 <Text style={styles.smallBtnText}>EPG</Text>
-              </Pressable>
-              <Pressable style={styles.smallBtn} onPress={() => setRoute('CATCHUP')}>
-                <Text style={styles.smallBtnText}>CATCH-UP</Text>
               </Pressable>
             </View>
 
@@ -517,7 +506,6 @@ const styles = StyleSheet.create({
   },
   videoTitle: { color: '#ffffff', fontSize: 16, fontWeight: '700', marginBottom: 8 },
   streamUrlText: { color: '#94a3b8', fontSize: 12, marginBottom: 12, textAlign: 'center' },
-  vlcBtn: { backgroundColor: '#f97316', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6 },
   playerControlsRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   epgBox: { flex: 1, marginTop: 12, backgroundColor: '#0f192a', borderRadius: 8, overflow: 'hidden' },
   emptyText: { color: '#64748b', padding: 12, fontSize: 13 },
