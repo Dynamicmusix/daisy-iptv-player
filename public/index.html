@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Daisy IPTV v1.0.0 — Android TV • Mobile • iOS • Apple TV • Web</title>
+  <script src="/mpegts.js"></script>
+  <style>
+    :root {
+      --bg-primary: #09111e;
+      --bg-secondary: #101d33;
+      --bg-card: #152642;
+      --bg-card-hover: #1d355c;
+      --accent: #00b4d8;
+      --accent-bright: #48cae4;
+      --accent-gold: #facc15;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #233b63;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+    body.light-mode {
+      --bg-primary: #f1f5f9;
+      --bg-secondary: #e2e8f0;
+      --bg-card: #ffffff;
+      --bg-card-hover: #dbeafe;
+      --accent: #0284c7;
+      --accent-bright: #0369a1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --border: #cbd5e1;
+    }
+    body.portal-theme {
+      --bg-primary: #120924;
+      --bg-secondary: #1e1136;
+      --bg-card: #2a184a;
+      --bg-card-hover: #3b2266;
+      --accent: #a855f7;
+      --accent-bright: #c084fc;
+      --border: #4c2d85;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Avenir Next", "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 15%, var(--bg-secondary), var(--bg-primary) 80%);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+    #device-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      margin: 0 auto;
+      transition: max-width 0.25s ease;
+      overflow: hidden;
+      position: relative;
+    }
+    body.mode-mobile #device-wrapper {
+      max-width: 430px;
+      border-left: 2px solid var(--border);
+      border-right: 2px solid var(--border);
+      box-shadow: 0 0 50px rgba(0,0,0,0.75);
+    }
+    body.mode-tablet #device-wrapper {
+      max-width: 1024px;
+      border-left: 2px solid var(--border);
+      border-right: 2px solid var(--border);
+    }
+    .focusable:focus, .focusable.dpad-focus {
+      outline: 3px solid var(--accent-gold) !important;
+      outline-offset: 2px;
+      transform: scale(1.02);
+      z-index: 5;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(16, 29, 51, 0.92);
+      border-bottom: 1px solid var(--border);
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-pill {
+      background: linear-gradient(135deg, var(--accent), #2563eb);
+      color: #fff;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+    }
+    .portal-meta {
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+    }
+    .portal-meta .mac-line {
+      color: var(--accent-bright);
+      font-family: "Menlo", "Consolas", monospace;
+      font-weight: 600;
+    }
+    .portal-meta .exp-line {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .btn:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+    .btn-primary { background: var(--accent); color: #05101c; border-color: var(--accent-bright); font-weight: 700; }
+    .btn-primary:hover { background: var(--accent-bright); }
+    .btn-gold { background: #eab308; color: #0f172a; border-color: #facc15; font-weight: 700; }
+    .btn-danger { background: #991b1b; color: #fff; border-color: #ef4444; }
+    .status-banner {
+      padding: 8px 16px;
+      background: rgba(239, 68, 68, 0.2);
+      border-bottom: 1px solid var(--danger);
+      color: #fca5a5;
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .progress-bar-wrap {
+      height: 3px;
+      width: 100%;
+      background: transparent;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-gold));
+      transition: width 0.25s ease;
+    }
+
+    /* Slide-out Side Menu */
+    .side-drawer-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 90;
+      display: none;
+    }
+    .side-drawer {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 270px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+    .side-drawer.open { transform: translateX(0); }
+    .side-drawer-backdrop.open { display: block; }
+    .drawer-item {
+      padding: 11px 12px;
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .drawer-item:hover { background: var(--bg-card-hover); }
+
+    .screen {
+      flex: 1;
+      display: none;
+      overflow: hidden;
+    }
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 1. MAIN MENU CAROUSEL */
+    .carousel-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      gap: 24px;
+    }
+    .carousel-subtitle {
+      color: var(--text-muted);
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .carousel-track {
+      display: flex;
+      gap: 18px;
+      overflow-x: auto;
+      max-width: 100%;
+      padding: 16px 24px;
+      scroll-behavior: smooth;
+    }
+    .carousel-card {
+      min-width: 185px;
+      height: 225px;
+      background: linear-gradient(160deg, var(--bg-card), rgba(16, 29, 51, 0.9));
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+    }
+    .carousel-card:hover {
+      border-color: var(--accent-bright);
+      transform: translateY(-5px);
+      background: var(--bg-card-hover);
+    }
+    .carousel-card .c-icon { font-size: 48px; margin-bottom: 14px; }
+    .carousel-card .c-title { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; text-align: center; }
+    .carousel-card .c-count { font-size: 12px; color: var(--accent-bright); margin-top: 6px; font-weight: 600; }
+
+    /* 2. LIVE TV WORKSPACE */
+    .tv-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 250px 330px 1fr;
+      overflow: hidden;
+    }
+    body.mode-mobile .tv-layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: 220px 150px 1fr;
+    }
+    .pane {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      background: rgba(15, 25, 42, 0.75);
+    }
+    .pane-header {
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-bright);
+    }
+    .search-box {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .scroll-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .row-item {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(35, 59, 99, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13px;
+      gap: 8px;
+    }
+    .row-item:hover { background: var(--bg-card-hover); }
+    .row-item.active {
+      background: var(--accent);
+      color: #04101c;
+      font-weight: 700;
+    }
+    .row-item.active .ch-num { color: #04101c; }
+    .ch-num {
+      color: var(--accent-bright);
+      font-weight: 700;
+      min-width: 36px;
+      font-size: 12px;
+    }
+    .ch-logo {
+      width: 28px;
+      height: 22px;
+      object-fit: contain;
+      background: #050b14;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .ch-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .star-btn {
+      color: var(--accent-gold);
+      font-size: 15px;
+      padding: 2px 5px;
+      cursor: pointer;
+    }
+
+    /* Video Player Column */
+    .player-pane {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 10px;
+      overflow-y: auto;
+      background: var(--bg-primary);
+    }
+    .video-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 54vh;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    video#daisy-video {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: block;
+    }
+    .now-playing-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+    .transport-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .seek-slider {
+      flex: 1;
+      min-width: 120px;
+      accent-color: var(--accent-bright);
+      cursor: pointer;
+    }
+    .vol-slider {
+      width: 80px;
+      accent-color: var(--accent-gold);
+      cursor: pointer;
+    }
+    .time-badge {
+      font-family: "Menlo", "Consolas", monospace;
+      font-size: 11px;
+      color: var(--accent-bright);
+      min-width: 95px;
+      text-align: center;
+    }
+    .stb-control-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-secondary);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .epg-panel {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      overflow-y: auto;
+      min-height: 110px;
+    }
+
+    /* 3. VOD & SERIES GRID */
+    .catalog-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      overflow: hidden;
+    }
+    body.mode-mobile .catalog-layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: 160px 1fr;
+    }
+    .poster-grid {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 14px;
+      overflow-y: auto;
+      align-content: start;
+    }
+    .poster-grid.list-view {
+      grid-template-columns: 1fr;
+    }
+    .poster-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .poster-card:hover { transform: translateY(-4px); border-color: var(--accent-bright); }
+    .poster-img {
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      object-fit: cover;
+      background: #060d18;
+    }
+    .poster-info { padding: 8px 10px; }
+    .poster-title { font-size: 12px; font-weight: 700; line-height: 1.3; }
+    .poster-meta { font-size: 11px; color: var(--accent-gold); margin-top: 4px; }
+
+    /* Modals / Dialogs */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 10, 20, 0.82);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    }
+    .modal-header {
+      padding: 14px 18px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .modal-body {
+      padding: 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    body.mode-mobile .form-grid { grid-template-columns: 1fr; }
+    .field-group { display: flex; flex-direction: column; gap: 5px; }
+    .field-group label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+    .field-input, .field-select {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 9px 11px;
+      border-radius: 7px;
+      font-size: 13px;
+    }
+    .pref-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      gap: 12px;
+    }
+    .pref-label { font-size: 13px; font-weight: 600; }
+    .pref-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .epg-grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .epg-grid-table th, .epg-grid-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .epg-grid-table th { background: var(--bg-card); color: var(--accent-bright); }
+  </style>
+</head>
+<body>
+<div id="device-wrapper">
+  <!-- Slide-out Side Menu -->
+  <div id="drawer-backdrop" class="side-drawer-backdrop" onclick="toggleDrawer(false)"></div>
+  <aside id="side-drawer" class="side-drawer">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <span class="logo-pill">Daisy IPTV 1.0.0</span>
+      <button class="btn" onclick="toggleDrawer(false)">✕</button>
+    </div>
+    <div class="drawer-item focusable" tabindex="0" onclick="switchScreen('MAIN_MENU');toggleDrawer(false)">🏠 Home Carousel</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="switchScreen('LIVE_TV');toggleDrawer(false)">📺 Live TV Channels</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openVod();toggleDrawer(false)">🎬 VOD Movies</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openSeries();toggleDrawer(false)">🎞️ Series / Shows</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="switchScreen('RADIO');toggleDrawer(false)">📻 Radio Channels</div>
+    <hr style="border-color:var(--border);margin:8px 0;" />
+    <div class="drawer-item focusable" tabindex="0" onclick="openModal('modal-profiles');toggleDrawer(false)">👤 Portal Profiles</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openNewProfileModal();toggleDrawer(false)">➕ New Portal Setup</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openModal('modal-filter');toggleDrawer(false)">🗂️ Filter / Hide Genres</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openModal('modal-reorder');toggleDrawer(false)">↕️ Reorder Channels</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openModal('modal-backup');toggleDrawer(false)">☁️ Backup & Restore Code</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openModal('modal-prefs');toggleDrawer(false)">⚙️ Preferences</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openModal('modal-faq');toggleDrawer(false)">❓ FAQ & Help</div>
+    <div class="drawer-item focusable" tabindex="0" onclick="openModal('modal-about');toggleDrawer(false)">ℹ️ About & Licences</div>
+  </aside>
+
+  <!-- Top Header Bar -->
+  <header class="topbar">
+    <div class="brand-cluster">
+      <button class="btn focusable" tabindex="0" onclick="toggleDrawer(true)">☰ MENU</button>
+      <div class="logo-pill" onclick="switchScreen('MAIN_MENU')" style="cursor:pointer;">Daisy IPTV</div>
+      <div class="portal-meta">
+        <span class="mac-line" id="lbl-mac">No Portal Configured</span>
+        <span class="exp-line" id="lbl-exp">Click "➕ Setup New MAC Portal" to connect</span>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <select id="viewport-mode" class="field-select focusable" style="padding:5px 8px;font-size:11px;" onchange="setViewportMode(this.value)" title="Preview Android TV / Apple TV, iPad/Tablet, or iPhone/Android Phone layout">
+        <option value="tv">🖥️ TV / 10-Foot Mode (Android TV & Apple TV)</option>
+        <option value="tablet">📱 Tablet / iPad Mode</option>
+        <option value="mobile">📲 Mobile Phone Mode (iOS & Android)</option>
+      </select>
+      <button class="btn focusable" tabindex="0" onclick="switchScreen('MAIN_MENU')">🏠 HOME</button>
+      <button class="btn focusable" tabindex="0" onclick="openModal('modal-profiles')">👤 PROFILES</button>
+      <button class="btn focusable" tabindex="0" onclick="openModal('modal-filter')">🗂️ FILTER</button>
+      <button class="btn focusable" tabindex="0" onclick="openModal('modal-backup')">☁️ BACKUP</button>
+      <button class="btn focusable" tabindex="0" onclick="toggleMute()" id="btn-speaker">🔊</button>
+      <button class="btn btn-primary focusable" tabindex="0" onclick="openModal('modal-prefs')">⚙️ PREFERENCES</button>
+    </div>
+  </header>
+
+  <div class="progress-bar-wrap"><div id="progress-bar" class="progress-bar-fill"></div></div>
+  <div id="error-banner" class="status-banner">
+    <span id="lbl-error">Unable to connect to portal</span>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="openNewProfileModal()">Setup Portal</button>
+      <button class="btn btn-danger" onclick="connectPortal(true)">Retry</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: MAIN MENU CAROUSEL -->
+  <section id="screen-MAIN_MENU" class="screen active">
+    <div class="carousel-stage">
+      <div class="carousel-subtitle" id="portal-welcome">DAISY IPTV v1.0.0 — SET UP YOUR PORTAL TO BEGIN</div>
+      <div class="carousel-track">
+        <div class="carousel-card focusable" tabindex="0" onclick="switchScreen('LIVE_TV')">
+          <div class="c-icon">📺</div>
+          <div class="c-title">LIVE TV</div>
+          <div class="c-count" id="count-tv">0 Genres</div>
+        </div>
+        <div class="carousel-card focusable" tabindex="0" onclick="openVod()">
+          <div class="c-icon">🎬</div>
+          <div class="c-title">VOD MOVIES</div>
+          <div class="c-count" id="count-vod">Movies & 4K</div>
+        </div>
+        <div class="carousel-card focusable" tabindex="0" onclick="openSeries()">
+          <div class="c-icon">🎞️</div>
+          <div class="c-title">SERIES</div>
+          <div class="c-count" id="count-series">TV Shows</div>
+        </div>
+        <div class="carousel-card focusable" tabindex="0" onclick="switchScreen('RADIO')">
+          <div class="c-icon">📻</div>
+          <div class="c-title">RADIO</div>
+          <div class="c-count">Audio Streams</div>
+        </div>
+        <div class="carousel-card focusable" tabindex="0" onclick="openEpgModal()">
+          <div class="c-icon">📅</div>
+          <div class="c-title">EPG GUIDE</div>
+          <div class="c-count">Grid & Catch-Up</div>
+        </div>
+        <div class="carousel-card focusable" tabindex="0" onclick="openModal('modal-profiles')">
+          <div class="c-icon">👤</div>
+          <div class="c-title">ACCOUNT</div>
+          <div class="c-count" id="card-profile-name">Manage Profiles</div>
+        </div>
+        <div class="carousel-card focusable" tabindex="0" onclick="openModal('modal-prefs')">
+          <div class="c-icon">⚙️</div>
+          <div class="c-title">SETTINGS</div>
+          <div class="c-count" id="card-player-engine">VLC / KSPlayer</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+        <button class="btn btn-primary focusable" tabindex="0" onclick="openNewProfileModal()">➕ Setup New MAC Portal</button>
+        <button class="btn focusable" tabindex="0" onclick="openModal('modal-backup')">🔑 Restoration Code Backup</button>
+        <button class="btn focusable" tabindex="0" onclick="openModal('modal-about')">ℹ️ About Daisy IPTV v1.0.0</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 2: LIVE TV PLAYER -->
+  <section id="screen-LIVE_TV" class="screen">
+    <div class="tv-layout">
+      <!-- Column 1: Genres -->
+      <div class="pane">
+        <div class="pane-header">
+          <span>TV GENRES (<span id="tv-genre-total">0</span>)</span>
+          <button class="btn" style="padding:3px 7px;font-size:10px;" onclick="openModal('modal-filter')">Filter</button>
+        </div>
+        <div style="padding:8px;border-bottom:1px solid var(--border);">
+          <input type="text" id="tv-genre-search" class="search-box" placeholder="Search genres..." oninput="renderTvGenres()" />
+        </div>
+        <div id="tv-genre-list" class="scroll-list"></div>
+      </div>
+
+      <!-- Column 2: Channels -->
+      <div class="pane">
+        <div class="pane-header">
+          <span id="tv-current-genre-title">CHANNELS</span>
+          <span id="lbl-records" style="color:var(--text-muted);font-size:11px;">0 records</span>
+        </div>
+        <div style="padding:8px;border-bottom:1px solid var(--border);display:flex;gap:6px;">
+          <input type="text" id="tv-ch-search" class="search-box" placeholder="Search channels..." oninput="renderTvChannels()" />
+          <button id="btn-fav-toggle" class="btn" onclick="toggleFavFilter()">★ FAV</button>
+        </div>
+        <div id="tv-channel-list" class="scroll-list"></div>
+        <div style="padding:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <button class="btn" onclick="changeTvPage(-1)">◀ Prev Page</button>
+          <span id="tv-page-indicator" style="font-size:12px;color:var(--text-muted);">Page 1</span>
+          <button class="btn" onclick="changeTvPage(1)">Next Page ▶</button>
+        </div>
+      </div>
+
+      <!-- Column 3: Video Player & Controls & EPG -->
+      <div class="player-pane">
+        <div class="now-playing-bar" id="video-overlay">
+          <div style="flex:1;min-width:180px;overflow:hidden;">
+            <strong id="lbl-channel-name" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Select a channel to start playback</strong>
+            <div id="lbl-stream-status" style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ready • Engine: VLC / MPEG-TS</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="btn btn-gold focusable" onclick="openInExternalVlc()">▶ Open in VLC</button>
+            <button class="btn focusable" onclick="copyStreamUrl()">📋 Copy URL</button>
+          </div>
+        </div>
+
+        <div class="video-stage" id="video-stage">
+          <video id="daisy-video" controls playsinline></video>
+        </div>
+
+        <div class="transport-bar">
+          <button class="btn focusable" onclick="seekRelative(-15)" title="Rewind 15s">⏪ -15s</button>
+          <button class="btn btn-primary focusable" onclick="togglePlayPause()" id="btn-transport-play" title="Play/Pause">⏯ PLAY/PAUSE</button>
+          <button class="btn focusable" onclick="seekRelative(15)" title="Forward 15s">⏩ +15s</button>
+          <input type="range" id="video-seek-slider" class="seek-slider focusable" min="0" max="100" value="0" step="0.1" oninput="seekToPercent(this.value)" />
+          <span class="time-badge" id="video-time-badge">00:00 / LIVE</span>
+          <span style="font-size:12px;">🔊</span>
+          <input type="range" id="video-vol-slider" class="vol-slider focusable" min="0" max="1" step="0.05" value="1" oninput="setVideoVolume(this.value)" title="Volume" />
+        </div>
+
+        <div class="stb-control-bar">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn focusable" onclick="switchScreen('MAIN_MENU')">⏹ EXIT</button>
+            <button class="btn focusable" onclick="recordCurrentStream()">🔴 REC</button>
+            <button class="btn focusable" onclick="openEpgModal()">📅 EPG</button>
+            <button class="btn focusable" onclick="openModal('modal-catchup')">⏪ CATCH-UP</button>
+            <button class="btn focusable" onclick="openModal('modal-reorder')">↕️ EDIT</button>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn focusable" onclick="cycleAspectRatio()" id="btn-aspect">📐 Aspect: Auto</button>
+            <button class="btn focusable" onclick="togglePip()">🖼️ PIP</button>
+            <button class="btn focusable" onclick="toggleFullscreen()">⛶ FULL</button>
+          </div>
+        </div>
+
+        <div class="epg-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <strong style="font-size:12px;color:var(--accent-bright);">CHANNEL INFO / EPG SCHEDULE</strong>
+            <span id="lbl-time" style="font-size:11px;color:var(--text-muted);"></span>
+          </div>
+          <div id="short-epg-list" style="font-size:12px;color:var(--text-muted);">
+            Select a Live TV channel to view its program schedule and stream diagnostics.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: VOD MOVIES -->
+  <section id="screen-VOD" class="screen">
+    <div class="catalog-layout">
+      <div class="pane">
+        <div class="pane-header">
+          <span>VOD CATEGORIES (<span id="vod-cat-total">0</span>)</span>
+        </div>
+        <div style="padding:8px;border-bottom:1px solid var(--border);">
+          <input type="text" id="vod-cat-search" class="search-box" placeholder="Search VOD categories..." oninput="renderVodCategories()" />
+        </div>
+        <div id="vod-cat-list" class="scroll-list"></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;overflow:hidden;">
+        <div class="pane-header" style="padding:10px 16px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span id="vod-current-cat-title">VOD MOVIES</span>
+            <span id="vod-records-count" style="color:var(--text-muted);font-size:11px;"></span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="vod-search-input" class="search-box" style="width:200px;" placeholder="Search movies..." onkeydown="if(event.key==='Enter')loadVodPage(1,true)" />
+            <select id="vod-sort" class="field-select" style="padding:5px 8px;font-size:12px;" onchange="loadVodPage(1,true)">
+              <option value="added">Sort: Added</option>
+              <option value="name">Sort: Name</option>
+              <option value="rating">Sort: Rating</option>
+            </select>
+            <button class="btn" onclick="toggleGridList('vod-grid')">⊞ Grid/List</button>
+            <button class="btn btn-primary" onclick="loadVodPage(state.vodPage+1,false)">＋ Load More</button>
+          </div>
+        </div>
+        <div id="vod-grid" class="poster-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 4: SERIES / SHOWS -->
+  <section id="screen-SERIES" class="screen">
+    <div class="catalog-layout">
+      <div class="pane">
+        <div class="pane-header">
+          <span>SERIES CATEGORIES (<span id="series-cat-total">0</span>)</span>
+        </div>
+        <div style="padding:8px;border-bottom:1px solid var(--border);">
+          <input type="text" id="series-cat-search" class="search-box" placeholder="Search Series categories..." oninput="renderSeriesCategories()" />
+        </div>
+        <div id="series-cat-list" class="scroll-list"></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;overflow:hidden;">
+        <div class="pane-header" style="padding:10px 16px;">
+          <span id="series-current-cat-title">SERIES / SHOWS</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="series-search-input" class="search-box" style="width:200px;" placeholder="Search series..." onkeydown="if(event.key==='Enter')loadSeriesPage(1,true)" />
+            <button class="btn btn-primary" onclick="loadSeriesPage(state.seriesPage+1,false)">＋ Load More</button>
+          </div>
+        </div>
+        <div id="series-grid" class="poster-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 5: RADIO PLAYER -->
+  <section id="screen-RADIO" class="screen">
+    <div style="padding:24px;max-width:800px;margin:0 auto;width:100%;">
+      <h2 style="margin-bottom:8px;">📻 Radio Channels</h2>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">
+        Streams audio-only radio channels from your portal in background audio mode.
+      </p>
+      <div id="radio-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </section>
+</div>
+
+<!-- MODAL 1: NEW PORTAL / PROFILE SETUP -->
+<div id="modal-new-profile" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span id="new-profile-modal-title">New Portal Configuration</span>
+      <button class="btn" onclick="closeModal('modal-new-profile')">✕ CLOSE</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field-group">
+          <label>Title (Optional)</label>
+          <input type="text" id="np-name" class="field-input" placeholder="My IPTV Portal" />
+        </div>
+        <div class="field-group">
+          <label>STB Type</label>
+          <select id="np-stbtype" class="field-select">
+            <option value="MAG250">MAG250</option>
+            <option value="MAG254">MAG254</option>
+            <option value="MAG256">MAG256</option>
+            <option value="MAG322">MAG322</option>
+            <option value="MAG420">MAG420</option>
+            <option value="MAG524">MAG524</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Host *</label>
+          <input type="text" id="np-host" class="field-input" placeholder="http://your-portal-domain.com/c" />
+          <span id="lbl-error-host" style="color:var(--danger);font-size:11px;display:none;">Error! Host is not valid.</span>
+        </div>
+        <div class="field-group">
+          <label>MAC Address *</label>
+          <input type="text" id="np-mac" class="field-input" placeholder="00:1A:79:00:00:00" />
+          <span id="lbl-error-mac" style="color:var(--danger);font-size:11px;display:none;">Error! MAC is not valid</span>
+        </div>
+      </div>
+
+      <div class="pref-row">
+        <div>
+          <div class="pref-label">Advanced Settings</div>
+          <div class="pref-sub">Configure Serial, Device ID 1/2, Signature, Hardware Version, and Custom Keys</div>
+        </div>
+        <input type="checkbox" id="np-adv-toggle" onchange="document.getElementById('np-adv-box').style.display=this.checked?'grid':'none'" />
+      </div>
+
+      <div id="np-adv-box" class="form-grid" style="display:none;">
+        <div class="field-group">
+          <label>Serial (Optional)</label>
+          <input type="text" id="np-serial" class="field-input" placeholder="000000N000000" />
+        </div>
+        <div class="field-group">
+          <label>H/w ver.</label>
+          <input type="text" id="np-hw" class="field-input" placeholder="1.7-BD-00" />
+        </div>
+        <div class="field-group">
+          <label>Device 1 (Optional)</label>
+          <input type="text" id="np-dev1" class="field-input" placeholder="64-char hex SHA256" />
+        </div>
+        <div class="field-group">
+          <label>Device 2 (Optional)</label>
+          <input type="text" id="np-dev2" class="field-input" placeholder="64-char hex SHA256" />
+        </div>
+        <div class="field-group">
+          <label>Signature (Optional)</label>
+          <input type="text" id="np-sig" class="field-input" placeholder="64-char hex SHA256" />
+        </div>
+        <div class="field-group">
+          <label>Send H/w info</label>
+          <select id="np-sendhw" class="field-select">
+            <option value="true">Enabled (Send SN & Device IDs)</option>
+            <option value="false">Disabled</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Custom Key 1 / Value 1</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="np-ck1" class="field-input" placeholder="Key 1" style="width:45%" />
+            <input type="text" id="np-cv1" class="field-input" placeholder="Value 1" style="width:55%" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Custom Key 2 / Value 2</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="np-ck2" class="field-input" placeholder="Key 2" style="width:45%" />
+            <input type="text" id="np-cv2" class="field-input" placeholder="Value 2" style="width:55%" />
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;">
+        <button class="btn" onclick="closeModal('modal-new-profile')">CANCEL</button>
+        <button class="btn btn-primary" onclick="saveProfileForm()">💾 SAVE & CONNECT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 2: PROFILES MANAGER -->
+<div id="modal-profiles" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>Profiles Manager</span>
+      <button class="btn" onclick="closeModal('modal-profiles')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="profiles-list-container" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:10px;">
+        <button class="btn btn-primary" onclick="closeModal('modal-profiles');openNewProfileModal()">➕ New Profile</button>
+        <button class="btn" onclick="duplicateActiveProfile()">📋 Duplicate</button>
+        <button class="btn" onclick="resetPortalCache()">🔄 Reset Cache</button>
+        <button class="btn btn-danger" onclick="deleteAllProfiles()">🗑️ Delete All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 3: PREFERENCES -->
+<div id="modal-prefs" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>Preferences</span>
+      <button class="btn" onclick="closeModal('modal-prefs')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="pref-row">
+        <div><div class="pref-label">Live TV: Player</div><div class="pref-sub">Select playback engine for Live MPEG-TS streams</div></div>
+        <select id="pref-tv-player" class="field-select" onchange="updatePrefs()">
+          <option value="VLC">VLC (MPEG-TS)</option>
+          <option value="KSPlayer">KSPlayer (FFmpeg / libmpv)</option>
+          <option value="Native">Native Player (AVPlayer / ExoPlayer)</option>
+        </select>
+      </div>
+      <div class="pref-row">
+        <div><div class="pref-label">Vod/Shows: Player</div><div class="pref-sub">Select playback engine for MKV/MP4 Movies & Series</div></div>
+        <select id="pref-vod-player" class="field-select" onchange="updatePrefs()">
+          <option value="VLC">VLC</option>
+          <option value="KSPlayer">KSPlayer (FFmpeg / libmpv)</option>
+          <option value="Native">Native Player</option>
+        </select>
+      </div>
+      <div class="pref-row">
+        <div><div class="pref-label">Aspect Ratio</div><div class="pref-sub">Default video scaling mode</div></div>
+        <select id="pref-aspect" class="field-select" onchange="updatePrefs()">
+          <option value="Auto">Auto</option>
+          <option value="Fit">Fit</option>
+          <option value="Full">Full (Stretch)</option>
+          <option value="16:9">16:9</option>
+          <option value="4:3">4:3</option>
+        </select>
+      </div>
+      <div class="pref-row">
+        <div><div class="pref-label">Buffer / Network Caching</div><div class="pref-sub">Default: 3,000 ms (reduces stutter on live streams)</div></div>
+        <select id="pref-buffer" class="field-select" onchange="updatePrefs()">
+          <option value="1000">1,000 ms</option>
+          <option value="2000">2,000 ms</option>
+          <option value="3000" selected>3,000 ms</option>
+          <option value="5000">5,000 ms</option>
+          <option value="10000">10,000 ms</option>
+        </select>
+      </div>
+      <div class="pref-row">
+        <div><div class="pref-label">Sort by</div><div class="pref-sub">Default channel & catalog sort order</div></div>
+        <select id="pref-sort" class="field-select" onchange="updatePrefs()">
+          <option value="number">Number</option>
+          <option value="name">Name (A-Z)</option>
+          <option value="added">Added Date</option>
+        </select>
+      </div>
+      <div class="pref-row">
+        <div><div class="pref-label">Audio & Subtitle Languages / Playback Speed</div><div class="pref-sub">Default track language & speed</div></div>
+        <div style="display:flex;gap:6px;">
+          <select id="pref-lang" class="field-select" onchange="updatePrefs()">
+            <option value="english">English</option>
+            <option value="swedish">Swedish</option>
+            <option value="dutch">Dutch</option>
+            <option value="arabic">Arabic</option>
+            <option value="spanish">Spanish</option>
+            <option value="french">French</option>
+            <option value="german">German</option>
+          </select>
+          <select id="pref-speed" class="field-select" onchange="updatePrefs()">
+            <option value="0.75">0.75x</option>
+            <option value="1" selected>1.0x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2">2.0x</option>
+          </select>
+        </div>
+      </div>
+      <div class="pref-row">
+        <div class="pref-label">Auto play last channel</div>
+        <input type="checkbox" id="pref-autoplay" checked onchange="updatePrefs()" />
+      </div>
+      <div class="pref-row">
+        <div class="pref-label">Picture in picture (PIP)</div>
+        <input type="checkbox" id="pref-pip" checked onchange="updatePrefs()" />
+      </div>
+      <div class="pref-row">
+        <div class="pref-label">Show Subtitles</div>
+        <input type="checkbox" id="pref-subs" checked onchange="updatePrefs()" />
+      </div>
+      <div class="pref-row">
+        <div class="pref-label">Dark Mode</div>
+        <input type="checkbox" id="pref-dark" checked onchange="updatePrefs()" />
+      </div>
+      <div class="pref-row">
+        <div class="pref-label">Load Actual Portal Theme</div>
+        <input type="checkbox" id="pref-theme" onchange="updatePrefs()" />
+      </div>
+      <div class="pref-row">
+        <div class="pref-label">Force Login (Profile Switch)</div>
+        <input type="checkbox" id="pref-forcelogin" checked onchange="updatePrefs()" />
+      </div>
+      <div class="pref-row">
+        <div class="pref-label">Online mode (Backup)</div>
+        <input type="checkbox" id="pref-onlinebackup" checked onchange="updatePrefs()" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 4: VOD / SERIES DETAIL & EPISODE PICKER -->
+<div id="modal-media-detail" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span id="detail-modal-title">Title</span>
+      <button class="btn" onclick="closeModal('modal-media-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="detail-modal-body"></div>
+  </div>
+</div>
+
+<!-- MODAL 5: FULL EPG GRID -->
+<div id="modal-epg" class="modal-backdrop">
+  <div class="modal-card" style="max-width:900px;">
+    <div class="modal-header">
+      <span>📅 EPG Timeline Grid</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="epg-offset-select" class="field-select" style="padding:4px 8px;font-size:12px;" onchange="renderEpgGrid()">
+          <option value="-120">OFFSET -02:00</option>
+          <option value="-60">OFFSET -01:00</option>
+          <option value="0" selected>OFFSET +00:00</option>
+          <option value="60">OFFSET +01:00</option>
+          <option value="120">OFFSET +02:00</option>
+        </select>
+        <button class="btn" onclick="closeModal('modal-epg')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="epg-grid-body"></div>
+  </div>
+</div>
+
+<!-- MODAL 6: CATCH-UP TV -->
+<div id="modal-catchup" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>⏪ Catch-Up TV</span>
+      <button class="btn" onclick="closeModal('modal-catchup')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="pref-row">
+        <div class="pref-label">Recording Container Format (`avi / mp4 / flv / mkv / ts`)</div>
+        <select id="catchup-format" class="field-select">
+          <option value="ts">MPEG-TS (.ts)</option>
+          <option value="mp4">MP4 (.mp4)</option>
+          <option value="mkv">Matroska (.mkv)</option>
+          <option value="avi">AVI (.avi)</option>
+          <option value="flv">FLV (.flv)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="catchup-days"></div>
+      <div id="catchup-list" style="font-size:13px;color:var(--text-muted);padding:12px;background:var(--bg-primary);border-radius:8px;">
+        Select a channel with Archive/Catch-Up enabled (`tv_archive = 1`) or click 🔴 REC to record the live stream directly to disk.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 7: FILTER / HIDE GENRES -->
+<div id="modal-filter" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>🗂️ Filter Genres</span>
+      <button class="btn" onclick="closeModal('modal-filter')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-muted);">Toggle visibility of genres in Live TV. Unchecked genres are hidden from the sidebar.</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="state.hiddenGenres=[];saveState();renderFilterModal();renderTvGenres()">Show All</button>
+      </div>
+      <div id="filter-genres-list" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 8: REORDER CHANNELS -->
+<div id="modal-reorder" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>↕️ REORDER CHANNELS</span>
+      <button class="btn" onclick="closeModal('modal-reorder')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-muted);">Move your channels to the top (`Move To Top`) or adjust their order:</p>
+      <div id="reorder-list" style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 9: BACKUP & RESTORE CODE -->
+<div id="modal-backup" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>☁️ Backup / Restore Settings (Cross-Device Sync)</span>
+      <button class="btn" onclick="closeModal('modal-backup')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-muted);">
+        Save your profiles, MAC settings, favorites, and preferences and restore them on any other device (Android TV, Android Phone, iPhone, iPad, or Apple TV).
+      </p>
+      <div class="field-group">
+        <label>Your Restoration Code is (Copy this code to restore on another device):</label>
+        <textarea id="backup-code-out" class="field-input" rows="4" readonly style="font-family:monospace;font-size:11px;"></textarea>
+        <button class="btn btn-primary" onclick="copyBackupCode()">📋 Copy Restoration Code</button>
+      </div>
+      <hr style="border-color:var(--border);" />
+      <div class="field-group">
+        <label>Enter your restoration code to restore:</label>
+        <textarea id="restore-code-in" class="field-input" rows="3" placeholder="Paste restoration code here..." style="font-family:monospace;font-size:11px;"></textarea>
+        <button class="btn btn-gold" onclick="applyRestoreCode()">🔄 Restore Settings Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 10: FAQ & HELP -->
+<div id="modal-faq" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>❓ Frequently Asked Questions</span>
+      <button class="btn" onclick="closeModal('modal-faq')">✕</button>
+    </div>
+    <div class="modal-body" style="font-size:13px;line-height:1.55;">
+      <div><strong>1. How do I get started?</strong><br/>Click <strong>➕ Setup New MAC Portal</strong>, enter your IPTV provider's Portal URL (e.g. <code>http://your-portal.com/c</code>) and your authorized MAC address (<code>00:1A:79:...</code>), and click <strong>Save & Connect</strong>.</div>
+      <div><strong>2. How does TV Remote / D-Pad navigation work?</strong><br/>Use the Arrow keys (Up/Down/Left/Right) and Enter/OK on Android TV, Fire TV, and Apple TV remotes, or touch on iOS & Android phones/tablets.</div>
+      <div><strong>3. How do I transfer my portal between Mobile and TV?</strong><br/>Open <strong>Backup</strong>, copy your Restoration Code, and paste it on your TV or second device.</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 11: ABOUT & ACKNOWLEDGEMENTS -->
+<div id="modal-about" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>ℹ️ About Daisy IPTV (v1.0.0)</span>
+      <button class="btn" onclick="closeModal('modal-about')">✕</button>
+    </div>
+    <div class="modal-body" style="font-size:13px;line-height:1.6;">
+      <p><strong>Daisy IPTV v1.0.0</strong> provides a unified IPTV Set-Top Box environment across <strong>Android Mobile, Android TV, iPhone, iPad, Apple TV, and Web/Desktop</strong> with identical look, settings, and features.</p>
+      <p style="color:var(--text-muted);">Daisy IPTV does not provide or sell IPTV subscriptions or content. You must configure your own authorized IPTV portal details.</p>
+      <div style="background:var(--bg-primary);padding:12px;border-radius:8px;font-size:12px;color:var(--text-muted);">
+        <strong>Open-Source Acknowledgements:</strong><br/>
+        • React Native & Expo Universal (`react-native-tvos`)<br/>
+        • mpegts.js (HTML5 MSE MPEG-TS Live Decoder)<br/>
+        • VLC / libmpv / FFmpeg (LGPL v2.1 / MIT)
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================================
+  // DAISY IPTV v1.0.0 — UNIVERSAL STATE & PERSISTENCE
+  // ============================================================================
+  const STORAGE_KEY = 'daisy_iptv_state_v100';
+  let mpegtsPlayer = null;
+
+  const DEFAULT_PROFILE = {
+    id: 'profile-default',
+    name: 'My IPTV Portal',
+    host: '',
+    mac: '00:1A:79:00:00:00',
+    stbType: 'MAG250',
+    serial: '',
+    deviceId1: '',
+    deviceId2: '',
+    signature: '',
+    hwVersion: '1.7-BD-00',
+    hwVersion2: '',
+    sendHwInfo: true,
+    advancedEnabled: false,
+    customParams: [{key:'',value:''},{key:'',value:''}],
+    token: '',
+    expireDate: ''
+  };
+
+  const state = {
+    profiles: [JSON.parse(JSON.stringify(DEFAULT_PROFILE))],
+    activeProfileId: DEFAULT_PROFILE.id,
+    prefs: {
+      tvPlayer: 'VLC',
+      vodPlayer: 'VLC',
+      aspectRatio: 'Auto',
+      bufferSizeMs: 3000,
+      sortBy: 'number',
+      language: 'english',
+      speed: 1.0,
+      autoPlayLastChannel: true,
+      pip: true,
+      subtitles: true,
+      darkMode: true,
+      portalTheme: false,
+      forceLogin: true,
+      onlineBackup: true
+    },
+    favChannels: [],
+    favVod: [],
+    hiddenGenres: [],
+    lastChannelId: null,
+    tvGenres: [],
+    selectedTvGenre: '*',
+    tvChannels: [],
+    tvPage: 1,
+    tvTotalItems: 0,
+    favFilterOnly: false,
+    activeChannel: null,
+    activeStreamUrl: '',
+    vodCategories: [],
+    selectedVodCat: '*',
+    vodItems: [],
+    vodPage: 1,
+    seriesCategories: [],
+    selectedSeriesCat: '*',
+    seriesItems: [],
+    seriesPage: 1
+  };
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.profiles?.length) state.profiles = parsed.profiles;
+        if (parsed.activeProfileId) state.activeProfileId = parsed.activeProfileId;
+        if (parsed.prefs) Object.assign(state.prefs, parsed.prefs);
+        if (Array.isArray(parsed.favChannels)) state.favChannels = parsed.favChannels;
+        if (Array.isArray(parsed.hiddenGenres)) state.hiddenGenres = parsed.hiddenGenres;
+        if (parsed.lastChannelId) state.lastChannelId = parsed.lastChannelId;
+      }
+    } catch (e) {}
+    applyThemePrefs();
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        profiles: state.profiles,
+        activeProfileId: state.activeProfileId,
+        prefs: state.prefs,
+        favChannels: state.favChannels,
+        hiddenGenres: state.hiddenGenres,
+        lastChannelId: state.lastChannelId
+      }));
+    } catch (e) {}
+  }
+
+  function getActiveProfile() {
+    return state.profiles.find(p => p.id === state.activeProfileId) || state.profiles[0];
+  }
+
+  function normalizePortalEndpoint(hostStr) {
+    let b = (hostStr || '').trim();
+    if (!b) return '';
+    if (!/^https?:\/\//i.test(b)) b = 'http://' + b;
+    b = b.replace(/\/+$/, '');
+    if (b.endsWith('/c')) b = b.slice(0, -2);
+    if (b.endsWith('/portal.php') || b.endsWith('/load.php')) return b;
+    return b + '/portal.php';
+  }
+
+  function setProgress(pct) {
+    const el = document.getElementById('progress-bar');
+    if (el) el.style.width = pct + '%';
+  }
+
+  // ============================================================================
+  // PORTAL API CLIENT
+  // ============================================================================
+  async function portalApi(params, retryAuth = true) {
+    const prof = getActiveProfile();
+    const endpoint = normalizePortalEndpoint(prof.host);
+    if (!endpoint) throw new Error('Please configure your Portal Host and MAC address.');
+
+    const url = new URL('/api/portal', window.location.origin);
+    url.searchParams.set('_endpoint', endpoint);
+    url.searchParams.set('_mac', prof.mac);
+    url.searchParams.set('_stbType', prof.stbType || 'MAG250');
+    if (prof.token) url.searchParams.set('_token', prof.token);
+
+    const fullParams = { ...params, JsHttpRequest: '1-xml' };
+    if (prof.advancedEnabled && Array.isArray(prof.customParams)) {
+      prof.customParams.forEach(pair => {
+        if (pair.key && pair.key.trim()) fullParams[pair.key.trim()] = pair.value || '';
+      });
+    }
+    for (const [k, v] of Object.entries(fullParams)) {
+      url.searchParams.set(k, String(v));
+    }
+
+    const res = await fetch(url.toString());
+    const text = await res.text();
+    if ((res.status === 401 || text.includes('Authorization failed')) && retryAuth && params.action !== 'handshake') {
+      await doHandshake();
+      return portalApi(params, false);
+    }
+    const json = JSON.parse(text);
+    return json.js;
+  }
+
+  async function doHandshake() {
+    const prof = getActiveProfile();
+    const js = await portalApi({ type: 'stb', action: 'handshake', token: '' }, false);
+    if (!js || !js.token) throw new Error('Portal handshake failed. Please check your Host URL and MAC address.');
+    prof.token = js.token;
+    saveState();
+    return js.token;
+  }
+
+  async function connectPortal(forceNewToken = true) {
+    const prof = getActiveProfile();
+    document.getElementById('error-banner').style.display = 'none';
+
+    if (!prof.host || !prof.host.trim()) {
+      document.getElementById('lbl-mac').textContent = 'No Portal Configured';
+      document.getElementById('lbl-exp').textContent = 'Click "➕ Setup New MAC Portal" to add your portal';
+      document.getElementById('portal-welcome').textContent = 'DAISY IPTV v1.0.0 — SET UP YOUR PORTAL TO BEGIN';
+      document.getElementById('card-profile-name').textContent = 'Setup Required';
+      openNewProfileModal(prof.id);
+      return;
+    }
+
+    document.getElementById('lbl-mac').textContent = `MAC: ${prof.mac} (${prof.stbType})`;
+    document.getElementById('portal-welcome').textContent = `PORTAL: ${prof.host} • PROFILE: ${prof.name}`;
+    document.getElementById('card-profile-name').textContent = `${prof.name} (${prof.stbType})`;
+
+    try {
+      setProgress(25);
+      if (forceNewToken || !prof.token) {
+        await doHandshake();
+      }
+      setProgress(50);
+      const profileParams = {
+        type: 'stb',
+        action: 'get_profile',
+        hd: '1',
+        num_banks: '2',
+        sn: prof.serial || '',
+        stb_type: prof.stbType || 'MAG250',
+        image_version: '218',
+        video_out: 'hdmi',
+        device_id: prof.deviceId1 || '',
+        device_id2: prof.deviceId2 || '',
+        signature: prof.signature || '',
+        auth_second_step: '1',
+        hw_version: prof.hwVersion || '1.7-BD-00',
+        not_valid_token: '0',
+        client_type: 'STB',
+        hw_version_2: prof.hwVersion2 || ''
+      };
+      let profData = await portalApi(profileParams);
+      if (!profData || !profData.id || profData.id === 0 || profData.id === '0') {
+        await doHandshake();
+        profData = await portalApi(profileParams);
+      }
+
+      const info = await portalApi({ type: 'account_info', action: 'get_main_info' });
+      if (info && info.phone) {
+        prof.expireDate = info.phone;
+      }
+      document.getElementById('lbl-exp').textContent = `Subscription Expire Date: ${prof.expireDate || 'Active'}`;
+
+      setProgress(75);
+      const genres = await portalApi({ type: 'itv', action: 'get_genres' });
+      state.tvGenres = Array.isArray(genres) ? genres : [];
+      document.getElementById('count-tv').textContent = `${state.tvGenres.length} Genres`;
+      document.getElementById('tv-genre-total').textContent = state.tvGenres.length;
+      renderTvGenres();
+
+      const firstGenre = state.tvGenres.find(g => g.id !== '*' && !state.hiddenGenres.includes(g.id))?.id || '*';
+      await selectTvGenre(firstGenre);
+      setProgress(100);
+      setTimeout(() => setProgress(0), 500);
+    } catch (err) {
+      setProgress(0);
+      document.getElementById('lbl-error').textContent = err.message || 'Unable to connect to portal';
+      document.getElementById('error-banner').style.display = 'flex';
+    }
+  }
+
+  // ============================================================================
+  // LIVE TV GENRES, CHANNELS & STREAM PLAYBACK
+  // ============================================================================
+  function renderTvGenres() {
+    const q = (document.getElementById('tv-genre-search')?.value || '').toLowerCase();
+    const container = document.getElementById('tv-genre-list');
+    const visible = state.tvGenres.filter(g =>
+      !state.hiddenGenres.includes(g.id) &&
+      (g.title || '').toLowerCase().includes(q)
+    );
+    container.innerHTML = visible.map(g => `
+      <div class="row-item focusable ${state.selectedTvGenre === g.id ? 'active' : ''}" tabindex="0" onclick="selectTvGenre('${g.id.replace(/'/g, "\\'")}')">
+        <span class="ch-title">${escapeHtml(g.title)}</span>
+      </div>
+    `).join('');
+  }
+
+  async function selectTvGenre(genreId) {
+    state.selectedTvGenre = genreId;
+    state.tvPage = 1;
+    renderTvGenres();
+    const gObj = state.tvGenres.find(g => g.id === genreId);
+    document.getElementById('tv-current-genre-title').textContent = gObj ? gObj.title : 'CHANNELS';
+    await loadTvChannelsPage(1);
+  }
+
+  async function loadTvChannelsPage(page) {
+    const prof = getActiveProfile();
+    if (!prof.host) return;
+    state.tvPage = Math.max(1, page);
+    setProgress(40);
+    try {
+      const res = await portalApi({
+        type: 'itv',
+        action: 'get_ordered_list',
+        genre: state.selectedTvGenre,
+        force_ch_link_check: '',
+        fav: state.favFilterOnly ? '1' : '0',
+        sortby: state.prefs.sortBy || 'number',
+        hd: '0',
+        p: String(state.tvPage)
+      });
+      state.tvChannels = res?.data || [];
+      state.tvTotalItems = res?.total_items || state.tvChannels.length;
+      document.getElementById('lbl-records').textContent = `${state.tvTotalItems} records`;
+      document.getElementById('tv-page-indicator').textContent = `Page ${state.tvPage} (${state.tvTotalItems} total)`;
+      renderTvChannels();
+
+      const liveScreenActive = document.getElementById('screen-LIVE_TV')?.classList.contains('active');
+      if (liveScreenActive && state.prefs.autoPlayLastChannel && !state.activeChannel && state.tvChannels.length > 1) {
+        const candidate = state.tvChannels.find(c => !c.name.includes('###')) || state.tvChannels[0];
+        if (candidate) playTvChannel(candidate.id);
+      }
+    } finally {
+      setProgress(0);
+    }
+  }
+
+  function changeTvPage(delta) {
+    loadTvChannelsPage(state.tvPage + delta);
+  }
+
+  function renderTvChannels() {
+    const q = (document.getElementById('tv-ch-search')?.value || '').toLowerCase();
+    const list = document.getElementById('tv-channel-list');
+    let items = state.tvChannels.filter(c => (c.name || '').toLowerCase().includes(q));
+    if (state.favFilterOnly) {
+      items = items.filter(c => state.favChannels.includes(c.id));
+    }
+    list.innerHTML = items.map(c => {
+      const isFav = state.favChannels.includes(c.id);
+      const isActive = state.activeChannel && state.activeChannel.id === c.id;
+      return `
+        <div class="row-item focusable ${isActive ? 'active' : ''}" tabindex="0" onclick="playTvChannel('${c.id}')">
+          <span class="ch-num">${escapeHtml(c.number || '')}</span>
+          ${c.logo ? `<img class="ch-logo" src="${escapeHtml(c.logo)}" onerror="this.style.display='none'" />` : ''}
+          <span class="ch-title">${escapeHtml(c.name)}</span>
+          <span class="star-btn" onclick="event.stopPropagation();toggleFavChannel('${c.id}')">${isFav ? '★' : '☆'}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleFavChannel(chId) {
+    const idx = state.favChannels.indexOf(chId);
+    if (idx >= 0) state.favChannels.splice(idx, 1);
+    else state.favChannels.push(chId);
+    saveState();
+    renderTvChannels();
+  }
+
+  function toggleFavFilter() {
+    state.favFilterOnly = !state.favFilterOnly;
+    document.getElementById('btn-fav-toggle').classList.toggle('btn-gold', state.favFilterOnly);
+    renderTvChannels();
+  }
+
+  async function resolveFreshChannelUrl(ch) {
+    const cleanPrefix = (s) => (s || '').replace(/^(ffmpeg|ffrt\d*|auto)\s+/i, '').trim();
+    let directUrl = cleanPrefix(ch.cmd);
+    try {
+      const synthCmd = ch.id ? `ffmpeg http://localhost/ch/${ch.id}_` : ch.cmd;
+      const linkRes = await portalApi({
+        type: 'itv',
+        action: 'create_link',
+        cmd: synthCmd,
+        series: '',
+        forced_storage: '0',
+        disable_ad: '0',
+        download: '0',
+        force_ch_link_check: '0'
+      });
+      if (linkRes?.cmd) {
+        let candidate = cleanPrefix(linkRes.cmd);
+        if (candidate.includes('stream=&') && ch.id) {
+          candidate = candidate.replace('stream=&', `stream=${ch.id}&`);
+        }
+        if (candidate.startsWith('http')) {
+          directUrl = candidate;
+        }
+      }
+    } catch (e) {}
+    return directUrl;
+  }
+
+  async function playTvChannel(chId) {
+    const ch = state.tvChannels.find(c => String(c.id) === String(chId));
+    if (!ch) return;
+    if (ch.name && ch.name.includes('#####')) return;
+    state.activeChannel = ch;
+    state.lastChannelId = ch.id;
+    saveState();
+    renderTvChannels();
+
+    document.getElementById('lbl-channel-name').textContent = `${ch.number}. ${ch.name}`;
+    document.getElementById('lbl-stream-status').textContent = `Resolving stream token (${state.prefs.tvPlayer})...`;
+
+    const directUrl = await resolveFreshChannelUrl(ch);
+    startVideoPlayback(directUrl, `${ch.number}. ${ch.name}`, true);
+    loadShortEpg(ch.id);
+  }
+
+  function destroyMpegtsPlayer() {
+    if (mpegtsPlayer) {
+      try {
+        mpegtsPlayer.pause();
+        mpegtsPlayer.unload();
+        mpegtsPlayer.detachMediaElement();
+        mpegtsPlayer.destroy();
+      } catch (e) {}
+      mpegtsPlayer = null;
+    }
+  }
+
+  function startVideoPlayback(rawStreamUrl, title, isLiveTs) {
+    state.activeStreamUrl = rawStreamUrl;
+    const prof = getActiveProfile();
+    const proxiedUrl = `/api/stream?url=${encodeURIComponent(rawStreamUrl)}&mac=${encodeURIComponent(prof.mac)}&stbType=${encodeURIComponent(prof.stbType || 'MAG250')}&_t=${Date.now()}`;
+    const videoEl = document.getElementById('daisy-video');
+
+    destroyMpegtsPlayer();
+    videoEl.pause();
+    videoEl.removeAttribute('src');
+    videoEl.playbackRate = Number(state.prefs.speed) || 1.0;
+
+    document.getElementById('lbl-channel-name').textContent = title;
+    document.getElementById('lbl-stream-status').textContent = `Connecting stream • Engine: ${state.prefs.tvPlayer} (FFmpeg H.264+AAC) • Buffer: ${state.prefs.bufferSizeMs}ms`;
+
+    if (window.mpegts && window.mpegts.isSupported()) {
+      mpegtsPlayer = window.mpegts.createPlayer({
+        type: 'mpegts',
+        isLive: Boolean(isLiveTs),
+        url: proxiedUrl
+      }, {
+        enableWorker: false,
+        enableStashBuffer: false,
+        stashInitialSize: 128 * 1024,
+        liveBufferLatencyChasing: false,
+        autoCleanupSourceBuffer: true,
+        fixAudioTimestampGap: true
+      });
+      mpegtsPlayer.attachMediaElement(videoEl);
+
+      mpegtsPlayer.on(window.mpegts.Events.MEDIA_INFO, (mi) => {
+        document.getElementById('lbl-stream-status').textContent = `PLAYING • ${mi.width || ''}x${mi.height || ''} (${mi.videoCodec || 'H.264'} / ${mi.audioCodec || 'AAC'}) • Engine: ${state.prefs.tvPlayer}`;
+      });
+
+      mpegtsPlayer.on(window.mpegts.Events.ERROR, (errType, errDetail) => {
+        document.getElementById('lbl-stream-status').textContent = `Stream notice: ${errDetail || errType} — Click channel again or "▶ Open in VLC"`;
+      });
+
+      const syncToBufferedStart = () => {
+        try {
+          if (videoEl.buffered && videoEl.buffered.length > 0) {
+            const bStart = videoEl.buffered.start(0);
+            if (videoEl.currentTime < bStart) {
+              videoEl.currentTime = bStart + 0.05;
+            }
+            if (videoEl.paused) {
+              videoEl.play().catch(() => {});
+            }
+          }
+        } catch (e) {}
+      };
+      videoEl.onprogress = syncToBufferedStart;
+      videoEl.onloadeddata = syncToBufferedStart;
+
+      mpegtsPlayer.load();
+      const playPromise = mpegtsPlayer.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(() => {
+          videoEl.muted = true;
+          videoEl.play().catch(() => {});
+        });
+      }
+    } else {
+      videoEl.src = proxiedUrl;
+      videoEl.play().catch((err) => {
+        document.getElementById('lbl-stream-status').textContent = `Playback notice: ${err.message || 'Use Open in VLC'}`;
+      });
+    }
+  }
+
+  async function loadShortEpg(chId) {
+    const box = document.getElementById('short-epg-list');
+    try {
+      const epg = await portalApi({ type: 'itv', action: 'get_short_epg', ch_id: String(chId), size: '10' });
+      if (!Array.isArray(epg) || epg.length === 0) {
+        box.innerHTML = `<div style="color:var(--text-muted);">No Information. (Channel ID: ${chId})</div>`;
+        return;
+      }
+      box.innerHTML = epg.map(p => `
+        <div style="padding:4px 0;border-bottom:1px solid rgba(35,59,99,0.4);">
+          <strong style="color:var(--accent-bright);">${escapeHtml(p.time || '')}</strong> — ${escapeHtml(p.name || '')}
+        </div>
+      `).join('');
+    } catch (e) {
+      box.innerHTML = `<div>No Information.</div>`;
+    }
+  }
+
+  // ============================================================================
+  // VOD MOVIES
+  // ============================================================================
+  async function openVod() {
+    const prof = getActiveProfile();
+    if (!prof.host) return openNewProfileModal(prof.id);
+    switchScreen('VOD');
+    if (state.vodCategories.length === 0) {
+      setProgress(35);
+      const cats = await portalApi({ type: 'vod', action: 'get_categories' });
+      state.vodCategories = Array.isArray(cats) ? cats : [];
+      document.getElementById('vod-cat-total').textContent = state.vodCategories.length;
+      document.getElementById('count-vod').textContent = `${state.vodCategories.length} Categories`;
+      renderVodCategories();
+      const first = state.vodCategories.find(c => c.id !== '*')?.id || '*';
+      await selectVodCategory(first);
+      setProgress(0);
+    }
+  }
+
+  function renderVodCategories() {
+    const q = (document.getElementById('vod-cat-search')?.value || '').toLowerCase();
+    const list = document.getElementById('vod-cat-list');
+    list.innerHTML = state.vodCategories
+      .filter(c => (c.title || '').toLowerCase().includes(q))
+      .map(c => `
+        <div class="row-item focusable ${state.selectedVodCat === c.id ? 'active' : ''}" tabindex="0" onclick="selectVodCategory('${c.id.replace(/'/g, "\\'")}')">
+          <span class="ch-title">${escapeHtml(c.title)}</span>
+        </div>
+      `).join('');
+  }
+
+  async function selectVodCategory(catId) {
+    state.selectedVodCat = catId;
+    renderVodCategories();
+    const cObj = state.vodCategories.find(c => c.id === catId);
+    document.getElementById('vod-current-cat-title').textContent = cObj ? cObj.title : 'VOD MOVIES';
+    await loadVodPage(1, true);
+  }
+
+  async function loadVodPage(page, replace) {
+    state.vodPage = page;
+    setProgress(50);
+    const sortBy = document.getElementById('vod-sort')?.value || 'added';
+    const search = document.getElementById('vod-search-input')?.value || '';
+    const params = {
+      type: 'vod',
+      action: 'get_ordered_list',
+      category: state.selectedVodCat,
+      sortby: sortBy,
+      p: String(page)
+    };
+    if (search.trim()) params.search = search.trim();
+    const res = await portalApi(params);
+    const rows = res?.data || [];
+    state.vodItems = replace ? rows : [...state.vodItems, ...rows];
+    document.getElementById('vod-records-count').textContent = `(${res?.total_items || state.vodItems.length} movies)`;
+    renderVodGrid();
+    setProgress(0);
+  }
+
+  function renderVodGrid() {
+    const grid = document.getElementById('vod-grid');
+    grid.innerHTML = state.vodItems.map((m, idx) => `
+      <div class="poster-card focusable" tabindex="0" onclick="openVodDetail(${idx})">
+        <img class="poster-img" src="${escapeHtml(m.screenshot_uri || '')}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23101d33%22/><text x=%2250%25%22 y=%2250%25%22 fill=%22%2348cae4%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2216%22>🎬 VOD</text></svg>'" />
+        <div class="poster-info">
+          <div class="poster-title">${escapeHtml(m.name)}</div>
+          <div class="poster-meta">⭐ ${escapeHtml(m.rating_imdb || 'N/A')} • ${escapeHtml((m.year || '').slice(0,4))}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function openVodDetail(idx) {
+    const m = state.vodItems[idx];
+    if (!m) return;
+    document.getElementById('detail-modal-title').textContent = m.name;
+    document.getElementById('detail-modal-body').innerHTML = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        ${m.screenshot_uri ? `<img src="${escapeHtml(m.screenshot_uri)}" style="width:160px;border-radius:10px;object-fit:cover;" />` : ''}
+        <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px;font-size:13px;">
+          <div><strong>IMDb Rating:</strong> ⭐ ${escapeHtml(m.rating_imdb || 'N/A')} &nbsp;|&nbsp; <strong>Duration:</strong> ${escapeHtml(String(m.time || 'N/A'))} min</div>
+          <div><strong>Genre:</strong> ${escapeHtml(m.genres_str || 'Movie')}</div>
+          <div><strong>Director:</strong> ${escapeHtml(m.director || 'N/A')}</div>
+          <div><strong>Actors:</strong> ${escapeHtml(m.actors || 'N/A')}</div>
+          <p style="color:var(--text-muted);line-height:1.5;">${escapeHtml(m.description || 'No description.')}</p>
+          <div style="display:flex;gap:10px;margin-top:10px;">
+            <button class="btn btn-primary" onclick="playVodMovie(${idx})">▶ PLAY MOVIE (${state.prefs.vodPlayer})</button>
+          </div>
+        </div>
+      </div>
+    `;
+    openModal('modal-media-detail');
+  }
+
+  async function playVodMovie(idx) {
+    const m = state.vodItems[idx];
+    if (!m) return;
+    closeModal('modal-media-detail');
+    switchScreen('LIVE_TV');
+    setProgress(50);
+    const res = await portalApi({
+      type: 'vod',
+      action: 'create_link',
+      cmd: m.cmd,
+      series: '',
+      forced_storage: '0',
+      disable_ad: '0',
+      download: '0',
+      force_ch_link_check: '0'
+    });
+    setProgress(0);
+    const streamUrl = (res?.cmd || '').replace(/^(ffmpeg|ffrt\d*|auto)\s+/i, '').trim();
+    startVideoPlayback(streamUrl, m.name, false);
+  }
+
+  // ============================================================================
+  // SERIES / SHOWS
+  // ============================================================================
+  async function openSeries() {
+    const prof = getActiveProfile();
+    if (!prof.host) return openNewProfileModal(prof.id);
+    switchScreen('SERIES');
+    if (state.seriesCategories.length === 0) {
+      setProgress(35);
+      const cats = await portalApi({ type: 'series', action: 'get_categories' });
+      state.seriesCategories = Array.isArray(cats) ? cats : [];
+      document.getElementById('series-cat-total').textContent = state.seriesCategories.length;
+      document.getElementById('count-series').textContent = `${state.seriesCategories.length} Categories`;
+      renderSeriesCategories();
+      const first = state.seriesCategories.find(c => c.id !== '*')?.id || '*';
+      await selectSeriesCategory(first);
+      setProgress(0);
+    }
+  }
+
+  function renderSeriesCategories() {
+    const q = (document.getElementById('series-cat-search')?.value || '').toLowerCase();
+    const list = document.getElementById('series-cat-list');
+    list.innerHTML = state.seriesCategories
+      .filter(c => (c.title || '').toLowerCase().includes(q))
+      .map(c => `
+        <div class="row-item focusable ${state.selectedSeriesCat === c.id ? 'active' : ''}" tabindex="0" onclick="selectSeriesCategory('${c.id.replace(/'/g, "\\'")}')">
+          <span class="ch-title">${escapeHtml(c.title)}</span>
+        </div>
+      `).join('');
+  }
+
+  async function selectSeriesCategory(catId) {
+    state.selectedSeriesCat = catId;
+    renderSeriesCategories();
+    const cObj = state.seriesCategories.find(c => c.id === catId);
+    document.getElementById('series-current-cat-title').textContent = cObj ? cObj.title : 'SERIES';
+    await loadSeriesPage(1, true);
+  }
+
+  async function loadSeriesPage(page, replace) {
+    state.seriesPage = page;
+    setProgress(50);
+    const search = document.getElementById('series-search-input')?.value || '';
+    const params = {
+      type: 'series',
+      action: 'get_ordered_list',
+      category: state.selectedSeriesCat,
+      sortby: 'added',
+      p: String(page)
+    };
+    if (search.trim()) params.search = search.trim();
+    const res = await portalApi(params);
+    const rows = res?.data || [];
+    state.seriesItems = replace ? rows : [...state.seriesItems, ...rows];
+    renderSeriesGrid();
+    setProgress(0);
+  }
+
+  function renderSeriesGrid() {
+    const grid = document.getElementById('series-grid');
+    grid.innerHTML = state.seriesItems.map((s, idx) => `
+      <div class="poster-card focusable" tabindex="0" onclick="openSeriesSeasons(${idx})">
+        <img class="poster-img" src="${escapeHtml(s.screenshot_uri || '')}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23101d33%22/><text x=%2250%25%22 y=%2250%25%22 fill=%22%2348cae4%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2216%22>🎞️ SERIES</text></svg>'" />
+        <div class="poster-info">
+          <div class="poster-title">${escapeHtml(s.name)}</div>
+          <div class="poster-meta">⭐ ${escapeHtml(s.rating_imdb || 'N/A')} • ${escapeHtml((s.year || '').slice(0,4))}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function openSeriesSeasons(idx) {
+    const show = state.seriesItems[idx];
+    if (!show) return;
+    document.getElementById('detail-modal-title').textContent = `${show.name} — Seasons & Episodes`;
+    document.getElementById('detail-modal-body').innerHTML = `<div>Loading seasons...</div>`;
+    openModal('modal-media-detail');
+
+    const res = await portalApi({
+      type: 'series',
+      action: 'get_ordered_list',
+      movie_id: show.id,
+      season_id: '0',
+      episode_id: '0',
+      category: state.selectedSeriesCat,
+      sortby: 'added',
+      p: '1'
+    });
+    const seasons = res?.data || [];
+    window._currentSeasons = seasons;
+
+    document.getElementById('detail-modal-body').innerHTML = `
+      <p style="font-size:13px;color:var(--text-muted);">${escapeHtml(show.description || '')}</p>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${seasons.map((sec, sIdx) => `
+          <div style="background:var(--bg-card);padding:12px;border-radius:10px;border:1px solid var(--border);">
+            <div style="font-weight:700;margin-bottom:8px;color:var(--accent-bright);">${escapeHtml(sec.name)}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${(sec.series || []).map(epNum => `
+                <button class="btn focusable" onclick="playSeriesEpisode(${sIdx}, ${epNum}, '${escapeHtml(show.name)}')">
+                  ▶ Episode ${epNum}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  async function playSeriesEpisode(seasonIdx, epNum, showName) {
+    const sec = (window._currentSeasons || [])[seasonIdx];
+    if (!sec) return;
+    closeModal('modal-media-detail');
+    switchScreen('LIVE_TV');
+    setProgress(50);
+    const res = await portalApi({
+      type: 'vod',
+      action: 'create_link',
+      cmd: sec.cmd,
+      series: String(epNum),
+      forced_storage: '0',
+      disable_ad: '0',
+      download: '0',
+      force_ch_link_check: '0'
+    });
+    setProgress(0);
+    const streamUrl = (res?.cmd || '').replace(/^(ffmpeg|ffrt\d*|auto)\s+/i, '').trim();
+    startVideoPlayback(streamUrl, `${showName} - ${sec.name} Ep ${epNum}`, false);
+  }
+
+  // ============================================================================
+  // PLAYER CONTROLS, EPG, CATCH-UP, REORDER, PROFILES, BACKUP
+  // ============================================================================
+  async function openInExternalVlc() {
+    if (!state.activeStreamUrl && !state.activeChannel) return alert('Select a channel or movie first.');
+    destroyMpegtsPlayer();
+    const v = document.getElementById('daisy-video');
+    v.pause();
+    v.removeAttribute('src');
+    v.load();
+    await fetch('/api/stop-stream').catch(() => {});
+    let targetUrl = state.activeStreamUrl;
+    if (state.activeChannel) {
+      targetUrl = await resolveFreshChannelUrl(state.activeChannel);
+      state.activeStreamUrl = targetUrl;
+    }
+    window.location.href = `vlc://${targetUrl}`;
+  }
+
+  async function copyStreamUrl() {
+    if (!state.activeStreamUrl && !state.activeChannel) return;
+    let targetUrl = state.activeStreamUrl;
+    if (state.activeChannel) {
+      targetUrl = await resolveFreshChannelUrl(state.activeChannel);
+      state.activeStreamUrl = targetUrl;
+    }
+    navigator.clipboard.writeText(targetUrl);
+    alert('Fresh Stream URL copied to clipboard:\n' + targetUrl);
+  }
+
+  function recordCurrentStream() {
+    if (!state.activeStreamUrl) return alert('Play a channel first before recording.');
+    const prof = getActiveProfile();
+    const ext = document.getElementById('catchup-format')?.value || 'ts';
+    const dlUrl = `/api/stream?url=${encodeURIComponent(state.activeStreamUrl)}&mac=${encodeURIComponent(prof.mac)}&download=1&ext=${ext}`;
+    window.open(dlUrl, '_blank');
+  }
+
+  function togglePlayPause() {
+    const v = document.getElementById('daisy-video');
+    if (v.paused) v.play(); else v.pause();
+  }
+
+  function seekRelative(seconds) {
+    const v = document.getElementById('daisy-video');
+    if (!v) return;
+    v.currentTime = Math.max(0, (v.currentTime || 0) + seconds);
+  }
+
+  function seekToPercent(pct) {
+    const v = document.getElementById('daisy-video');
+    if (!v || !isFinite(v.duration) || v.duration <= 0) return;
+    v.currentTime = (Number(pct) / 100) * v.duration;
+  }
+
+  function setVideoVolume(val) {
+    const v = document.getElementById('daisy-video');
+    if (!v) return;
+    v.volume = Number(val);
+    v.muted = Number(val) === 0;
+    document.getElementById('btn-speaker').textContent = v.muted ? '🔇' : '🔊';
+  }
+
+  function formatMediaTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '00:00';
+    const s = Math.floor(sec);
+    const hrs = Math.floor(s / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const rem = s % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return hrs > 0 ? `${hrs}:${pad(mins)}:${pad(rem)}` : `${pad(mins)}:${pad(rem)}`;
+  }
+
+  (function bindVideoTransportEvents() {
+    const v = document.getElementById('daisy-video');
+    if (!v) return;
+    v.addEventListener('timeupdate', () => {
+      const slider = document.getElementById('video-seek-slider');
+      const badge = document.getElementById('video-time-badge');
+      const cur = formatMediaTime(v.currentTime || 0);
+      if (isFinite(v.duration) && v.duration > 0 && v.duration < 86400 * 3) {
+        if (slider) slider.value = String(((v.currentTime || 0) / v.duration) * 100);
+        if (badge) badge.textContent = `${cur} / ${formatMediaTime(v.duration)}`;
+      } else {
+        if (badge) badge.textContent = `${cur} / LIVE`;
+      }
+    });
+    v.addEventListener('play', () => {
+      const b = document.getElementById('btn-transport-play');
+      if (b) b.textContent = '⏸ PAUSE';
+    });
+    v.addEventListener('pause', () => {
+      const b = document.getElementById('btn-transport-play');
+      if (b) b.textContent = '▶ PLAY';
+    });
+  })();
+
+  function toggleMute() {
+    const v = document.getElementById('daisy-video');
+    v.muted = !v.muted;
+    document.getElementById('btn-speaker').textContent = v.muted ? '🔇' : '🔊';
+  }
+
+  function cycleAspectRatio() {
+    const modes = ['Auto', 'Fit', 'Full', '16:9', '4:3'];
+    const next = modes[(modes.indexOf(state.prefs.aspectRatio) + 1) % modes.length];
+    state.prefs.aspectRatio = next;
+    document.getElementById('btn-aspect').textContent = `📐 Aspect: ${next}`;
+    const v = document.getElementById('daisy-video');
+    v.style.objectFit = next === 'Full' ? 'fill' : next === 'Fit' ? 'contain' : 'cover';
+    saveState();
+  }
+
+  function togglePip() {
+    const v = document.getElementById('daisy-video');
+    if (document.pictureInPictureElement) document.exitPictureInPicture();
+    else if (v.requestPictureInPicture) v.requestPictureInPicture();
+  }
+
+  function toggleFullscreen() {
+    const stage = document.getElementById('video-stage');
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (stage.requestFullscreen) stage.requestFullscreen();
+  }
+
+  function toggleGridList(gridId) {
+    document.getElementById(gridId).classList.toggle('list-view');
+  }
+
+  function openEpgModal() {
+    renderEpgGrid();
+    openModal('modal-epg');
+  }
+
+  function renderEpgGrid() {
+    const offsetMin = Number(document.getElementById('epg-offset-select')?.value || 0);
+    const now = new Date(Date.now() + offsetMin * 60000);
+    const t1 = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const t2 = new Date(now.getTime() + 1800000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const t3 = new Date(now.getTime() + 3600000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const sampleChs = state.tvChannels.filter(c => !c.name.includes('###')).slice(0, 12);
+
+    document.getElementById('epg-grid-body').innerHTML = `
+      <table class="epg-grid-table">
+        <thead>
+          <tr><th>Channel</th><th>${t1}</th><th>${t2}</th><th>${t3}</th></tr>
+        </thead>
+        <tbody>
+          ${sampleChs.map(c => `
+            <tr onclick="closeModal('modal-epg');switchScreen('LIVE_TV');playTvChannel('${c.id}')" style="cursor:pointer;">
+              <td><strong>${escapeHtml(c.number)}. ${escapeHtml(c.name)}</strong></td>
+              <td>Live Broadcast</td>
+              <td>Upcoming Program</td>
+              <td>Scheduled Slot</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function openNewProfileModal(editId) {
+    const p = editId ? state.profiles.find(x => x.id === editId) : null;
+    window._editingProfileId = p ? p.id : null;
+    document.getElementById('np-name').value = p ? p.name : '';
+    document.getElementById('np-host').value = p ? p.host : '';
+    document.getElementById('np-mac').value = p ? p.mac : '00:1A:79:00:00:00';
+    document.getElementById('np-stbtype').value = p ? p.stbType : 'MAG250';
+    document.getElementById('np-serial').value = p ? (p.serial || '') : '';
+    document.getElementById('np-hw').value = p ? (p.hwVersion || '') : '1.7-BD-00';
+    document.getElementById('np-dev1').value = p ? (p.deviceId1 || '') : '';
+    document.getElementById('np-dev2').value = p ? (p.deviceId2 || '') : '';
+    document.getElementById('np-sig').value = p ? (p.signature || '') : '';
+    openModal('modal-new-profile');
+  }
+
+  function saveProfileForm() {
+    const host = document.getElementById('np-host').value.trim();
+    const mac = document.getElementById('np-mac').value.trim().toUpperCase();
+    const validMac = /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(mac);
+    document.getElementById('lbl-error-host').style.display = host ? 'none' : 'block';
+    document.getElementById('lbl-error-mac').style.display = validMac ? 'none' : 'block';
+    if (!host || !validMac) return;
+
+    const newProf = {
+      id: window._editingProfileId || ('prof-' + Date.now()),
+      name: document.getElementById('np-name').value.trim() || 'Daisy IPTV Profile',
+      host,
+      mac,
+      stbType: document.getElementById('np-stbtype').value,
+      serial: document.getElementById('np-serial').value.trim(),
+      hwVersion: document.getElementById('np-hw').value.trim() || '1.7-BD-00',
+      deviceId1: document.getElementById('np-dev1').value.trim(),
+      deviceId2: document.getElementById('np-dev2').value.trim(),
+      signature: document.getElementById('np-sig').value.trim(),
+      sendHwInfo: document.getElementById('np-sendhw').value === 'true',
+      advancedEnabled: document.getElementById('np-adv-toggle').checked,
+      customParams: [
+        { key: document.getElementById('np-ck1').value, value: document.getElementById('np-cv1').value },
+        { key: document.getElementById('np-ck2').value, value: document.getElementById('np-cv2').value }
+      ],
+      token: ''
+    };
+
+    const existingIdx = state.profiles.findIndex(p => p.id === newProf.id);
+    if (existingIdx >= 0) state.profiles[existingIdx] = newProf;
+    else state.profiles.push(newProf);
+
+    state.activeProfileId = newProf.id;
+    saveState();
+    closeModal('modal-new-profile');
+    connectPortal(true);
+  }
+
+  function renderProfilesModal() {
+    const box = document.getElementById('profiles-list-container');
+    box.innerHTML = state.profiles.map(p => `
+      <div class="pref-row" style="border-color:${p.id === state.activeProfileId ? 'var(--accent-bright)' : 'var(--border)'}">
+        <div>
+          <div class="pref-label">${escapeHtml(p.name)} ${p.id === state.activeProfileId ? '✅ (Active)' : ''}</div>
+          <div class="pref-sub">${escapeHtml(p.host || 'Unconfigured Host')} • MAC: ${escapeHtml(p.mac)} • ${escapeHtml(p.stbType)}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-primary" onclick="switchProfile('${p.id}')">Switch</button>
+          <button class="btn" onclick="closeModal('modal-profiles');openNewProfileModal('${p.id}')">Edit</button>
+          <button class="btn btn-danger" onclick="deleteSingleProfile('${p.id}')" title="Delete this profile">🗑️ Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function deleteSingleProfile(id) {
+    const target = state.profiles.find(p => p.id === id);
+    if (!target) return;
+    if (!confirm(`Delete profile "${target.name}"?`)) return;
+
+    state.profiles = state.profiles.filter(p => p.id !== id);
+    if (state.profiles.length === 0) {
+      const fresh = JSON.parse(JSON.stringify(DEFAULT_PROFILE));
+      fresh.id = 'prof-' + Date.now();
+      state.profiles = [fresh];
+      state.activeProfileId = fresh.id;
+      state.tvGenres = [];
+      state.tvChannels = [];
+      state.vodCategories = [];
+      state.vodItems = [];
+      state.seriesCategories = [];
+      state.seriesItems = [];
+      state.activeChannel = null;
+      state.activeStreamUrl = '';
+      destroyMpegtsPlayer();
+    } else if (state.activeProfileId === id) {
+      state.activeProfileId = state.profiles[0].id;
+    }
+
+    saveState();
+    renderProfilesModal();
+    connectPortal(true);
+  }
+
+  function switchProfile(id) {
+    state.activeProfileId = id;
+    saveState();
+    closeModal('modal-profiles');
+    connectPortal(state.prefs.forceLogin);
+  }
+
+  function duplicateActiveProfile() {
+    const cur = getActiveProfile();
+    const copy = JSON.parse(JSON.stringify(cur));
+    copy.id = 'prof-' + Date.now();
+    copy.name = cur.name + ' (Copy)';
+    state.profiles.push(copy);
+    saveState();
+    renderProfilesModal();
+  }
+
+  function resetPortalCache() {
+    state.tvGenres = [];
+    state.vodCategories = [];
+    state.seriesCategories = [];
+    const cur = getActiveProfile();
+    cur.token = '';
+    saveState();
+    closeModal('modal-profiles');
+    connectPortal(true);
+  }
+
+  function deleteAllProfiles() {
+    if (!confirm('Reset all profiles?')) return;
+    state.profiles = [JSON.parse(JSON.stringify(DEFAULT_PROFILE))];
+    state.activeProfileId = DEFAULT_PROFILE.id;
+    saveState();
+    renderProfilesModal();
+  }
+
+  function updatePrefs() {
+    state.prefs.tvPlayer = document.getElementById('pref-tv-player').value;
+    state.prefs.vodPlayer = document.getElementById('pref-vod-player').value;
+    state.prefs.aspectRatio = document.getElementById('pref-aspect').value;
+    state.prefs.bufferSizeMs = Number(document.getElementById('pref-buffer').value);
+    state.prefs.sortBy = document.getElementById('pref-sort').value;
+    state.prefs.language = document.getElementById('pref-lang').value;
+    state.prefs.speed = Number(document.getElementById('pref-speed').value);
+    state.prefs.autoPlayLastChannel = document.getElementById('pref-autoplay').checked;
+    state.prefs.pip = document.getElementById('pref-pip').checked;
+    state.prefs.subtitles = document.getElementById('pref-subs').checked;
+    state.prefs.darkMode = document.getElementById('pref-dark').checked;
+    state.prefs.portalTheme = document.getElementById('pref-theme').checked;
+    state.prefs.forceLogin = document.getElementById('pref-forcelogin').checked;
+    state.prefs.onlineBackup = document.getElementById('pref-onlinebackup').checked;
+    applyThemePrefs();
+    saveState();
+  }
+
+  function applyThemePrefs() {
+    document.body.classList.toggle('light-mode', !state.prefs.darkMode);
+    document.body.classList.toggle('portal-theme', !!state.prefs.portalTheme);
+    const el = document.getElementById('card-player-engine');
+    if (el) el.textContent = `Player: ${state.prefs.tvPlayer}`;
+  }
+
+  function renderFilterModal() {
+    const box = document.getElementById('filter-genres-list');
+    box.innerHTML = state.tvGenres.slice(0, 120).map(g => {
+      const visible = !state.hiddenGenres.includes(g.id);
+      return `
+        <label class="pref-row" style="cursor:pointer;">
+          <span class="pref-label">${escapeHtml(g.title)}</span>
+          <input type="checkbox" ${visible ? 'checked' : ''} onchange="toggleGenreVisibility('${g.id.replace(/'/g, "\\'")}', this.checked)" />
+        </label>
+      `;
+    }).join('');
+  }
+
+  function toggleGenreVisibility(gId, show) {
+    if (show) state.hiddenGenres = state.hiddenGenres.filter(x => x !== gId);
+    else if (!state.hiddenGenres.includes(gId)) state.hiddenGenres.push(gId);
+    saveState();
+    renderTvGenres();
+  }
+
+  function renderReorderModal() {
+    const box = document.getElementById('reorder-list');
+    box.innerHTML = state.tvChannels.slice(0, 40).map((c, idx) => `
+      <div class="pref-row">
+        <span class="pref-label">${escapeHtml(c.number)}. ${escapeHtml(c.name)}</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" onclick="moveChannel(${idx}, 0)">⏫ Move To Top</button>
+          <button class="btn" onclick="moveChannel(${idx}, Math.max(0, ${idx}-1))">▲</button>
+          <button class="btn" onclick="moveChannel(${idx}, Math.min(state.tvChannels.length-1, ${idx}+1))">▼</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function moveChannel(fromIdx, toIdx) {
+    const [item] = state.tvChannels.splice(fromIdx, 1);
+    state.tvChannels.splice(toIdx, 0, item);
+    renderReorderModal();
+    renderTvChannels();
+  }
+
+  function renderBackupModal() {
+    const payload = {
+      v: '1.0.0',
+      profiles: state.profiles,
+      prefs: state.prefs,
+      favChannels: state.favChannels,
+      hiddenGenres: state.hiddenGenres
+    };
+    const code = 'DAISY-' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    document.getElementById('backup-code-out').value = code;
+  }
+
+  function copyBackupCode() {
+    const v = document.getElementById('backup-code-out').value;
+    navigator.clipboard.writeText(v);
+    alert('Restoration code copied! Paste it in Daisy IPTV on your TV, phone, or tablet.');
+  }
+
+  function applyRestoreCode() {
+    const raw = (document.getElementById('restore-code-in').value || '').trim().replace(/^DAISY-/, '');
+    try {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(raw))));
+      if (decoded.profiles) state.profiles = decoded.profiles;
+      if (decoded.prefs) Object.assign(state.prefs, decoded.prefs);
+      if (decoded.favChannels) state.favChannels = decoded.favChannels;
+      if (decoded.hiddenGenres) state.hiddenGenres = decoded.hiddenGenres;
+      saveState();
+      applyThemePrefs();
+      closeModal('modal-backup');
+      connectPortal(true);
+      alert('Settings & Profiles restored successfully!');
+    } catch (e) {
+      alert('Invalid restoration code.');
+    }
+  }
+
+  // ============================================================================
+  // NAVIGATION, MODALS, VIEWPORT SWITCHER & TV REMOTE D-PAD SUPPORT
+  // ============================================================================
+  function switchScreen(screenId) {
+    const prof = getActiveProfile();
+    if (screenId !== 'MAIN_MENU' && (!prof.host || !prof.host.trim())) {
+      openNewProfileModal(prof.id);
+      return;
+    }
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('screen-' + screenId);
+    if (target) target.classList.add('active');
+    if (screenId === 'RADIO') renderRadioScreen();
+    if (screenId === 'LIVE_TV' && state.prefs.autoPlayLastChannel && !state.activeChannel && state.tvChannels.length > 0) {
+      const candidate = state.tvChannels.find(c => !c.name.includes('###')) || state.tvChannels[0];
+      if (candidate) playTvChannel(candidate.id);
+    }
+  }
+
+  function renderRadioScreen() {
+    const box = document.getElementById('radio-list');
+    const sample = state.tvChannels.filter(c => !c.name.includes('###')).slice(0, 15);
+    box.innerHTML = sample.map(c => `
+      <div class="pref-row focusable" tabindex="0" onclick="switchScreen('LIVE_TV');playTvChannel('${c.id}')" style="cursor:pointer;">
+        <span>📻 ${escapeHtml(c.name)}</span>
+        <button class="btn btn-primary">▶ Listen</button>
+      </div>
+    `).join('');
+  }
+
+  function toggleDrawer(open) {
+    document.getElementById('side-drawer').classList.toggle('open', open);
+    document.getElementById('drawer-backdrop').classList.toggle('open', open);
+  }
+
+  function openModal(id) {
+    if (id === 'modal-profiles') renderProfilesModal();
+    if (id === 'modal-filter') renderFilterModal();
+    if (id === 'modal-reorder') renderReorderModal();
+    if (id === 'modal-backup') renderBackupModal();
+    document.getElementById(id).classList.add('open');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function setViewportMode(mode) {
+    document.body.classList.remove('mode-tv', 'mode-tablet', 'mode-mobile');
+    document.body.classList.add('mode-' + mode);
+  }
+
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+      if (e.key === 'Escape') document.activeElement.blur();
+      return;
+    }
+    const focusables = Array.from(document.querySelectorAll('.focusable')).filter(el => el.offsetParent !== null);
+    if (!focusables.length) return;
+    const idx = focusables.indexOf(document.activeElement);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = focusables[(idx + 1) % focusables.length];
+      next?.focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = focusables[(idx - 1 + focusables.length) % focusables.length];
+      prev?.focus();
+    } else if (e.key === 'Enter' && document.activeElement?.classList.contains('focusable')) {
+      e.preventDefault();
+      document.activeElement.click();
+    } else if (e.key === 'Escape' || e.key === 'Backspace') {
+      document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+      toggleDrawer(false);
+    }
+  });
+
+  setInterval(() => {
+    const el = document.getElementById('lbl-time');
+    if (el) el.textContent = new Date().toLocaleTimeString();
+  }, 1000);
+
+  loadState();
+  connectPortal(true);
+</script>
+</body>
+</html>

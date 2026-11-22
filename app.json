@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "Daisy IPTV",
+    "slug": "daisy-iptv",
+    "version": "1.0.0",
+    "orientation": "default",
+    "scheme": "daisyiptv",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["ios", "android", "web"],
+    "ios": {
+      "bundleIdentifier": "com.daisyiptv.universal",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": ["audio", "fetch", "remote-notification"],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "NSLocalNetworkUsageDescription": "Daisy IPTV uses the local network to connect to IPTV portals and discover Cast-enabled devices.",
+        "NSBluetoothAlwaysUsageDescription": "Daisy IPTV uses Bluetooth to play audio via wireless speakers and headphones.",
+        "LSApplicationQueriesSchemes": ["vlc", "vlc-x-callback"]
+      }
+    },
+    "android": {
+      "package": "com.daisyiptv.universal",
+      "versionCode": 100,
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.WAKE_LOCK"
+      ],
+      "intentFilters": [
+        {
+          "action": "android.intent.action.MAIN",
+          "category": [
+            "android.intent.category.LAUNCHER",
+            "android.intent.category.LEANBACK_LAUNCHER"
+          ]
+        },
+        {
+          "action": "android.intent.action.VIEW",
+          "data": [{ "scheme": "daisyiptv" }],
+          "category": [
+            "android.intent.category.DEFAULT",
+            "android.intent.category.BROWSABLE"
+          ]
+        }
+      ]
+    },
+    "plugins": [
+      [
+        "@react-native-tvos/config-tv",
+        {
+          "isTV": false,
+          "showVerboseWarnings": false,
+          "androidTVBanner": "./assets/tv_banner.png"
+        }
+      ]
+    ]
+  }
+}

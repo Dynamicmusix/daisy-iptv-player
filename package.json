@@ -1,0 +1,18 @@
+{
+  "name": "daisy-iptv",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Daisy IPTV - Universal IPTV & Set-Top Box Player for Web (Vercel), Android TV, Android Mobile, iOS, and Apple TV",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo \"Static assets in public/ and Serverless Functions in api/ are ready for Vercel\""
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
