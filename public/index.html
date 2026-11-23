@@ -2306,8 +2306,8 @@
           </div>
 
           <div class="srow__section">Playback & Player Engine</div>
-          <div class="srow focusable" tabindex="0" onclick="cycleSetting('tvPlayer',['Auto','FFmpeg','Native'])"
-            onmouseenter="setSettingsHero('📺','Live TV Player','Select the decoding engine for Live MPEG-TS streams (Auto, FFmpeg, or Native Player).')">
+          <div class="srow focusable" tabindex="0" onclick="cycleSetting('tvPlayer',['Auto','Direct','Native','FFmpeg'])"
+            onmouseenter="setSettingsHero('📺','Live TV Player','Select the decoding engine for Live MPEG-TS streams: Auto, Direct (TV direct connection), Native, or FFmpeg.')">
             <div class="srow__label"><span>Live TV: Player</span></div>
             <div class="srow__value" id="val-tvPlayer">Auto</div>
           </div>
@@ -3495,15 +3495,29 @@
       }
     } else {
       // Live TV Playback
-      const preferNative = state.prefs.tvPlayer === 'Native';
-      const mpegtsSupported = Boolean(window.mpegts && window.mpegts.isSupported());
+      const isDirect = state.prefs.tvPlayer === 'Direct';
+      const isNative = state.prefs.tvPlayer === 'Native';
+      const initialUrl = isDirect ? rawStreamUrl : proxiedUrl;
+      const mpegtsSupported = !isNative && !isDirect && Boolean(window.mpegts && window.mpegts.isSupported());
 
-      if (!preferNative && mpegtsSupported) {
+      videoEl.onerror = () => {
+        console.warn('Native video error on src:', videoEl.src);
+        if (videoEl.src !== rawStreamUrl && rawStreamUrl) {
+          console.log('Attempting direct stream without proxy:', rawStreamUrl);
+          document.getElementById('lv-stream-info').textContent = 'Connecting Direct Stream (Bypassing Proxy)...';
+          videoEl.src = rawStreamUrl;
+          videoEl.play().catch(() => {});
+          return;
+        }
+        document.getElementById('lv-stream-info').textContent = 'Stream error / blocked by provider (HTTP 456 or session in use).';
+      };
+
+      if (mpegtsSupported) {
         try {
           mpegtsPlayer = window.mpegts.createPlayer({
             type: 'mpegts',
             isLive: true,
-            url: proxiedUrl
+            url: initialUrl
           }, {
             enableWorker: false,
             enableStashBuffer: false,
@@ -3521,9 +3535,10 @@
           });
 
           mpegtsPlayer.on(window.mpegts.Events.ERROR, (errType, errDetail) => {
-            console.warn('mpegts error, falling back to native HTML5 video:', errType, errDetail);
+            console.warn('mpegts error, falling back to direct native HTML5 video:', errType, errDetail);
             destroyMpegtsPlayer();
-            videoEl.src = proxiedUrl;
+            const fallback = (window.tizen && rawStreamUrl) ? rawStreamUrl : initialUrl;
+            videoEl.src = fallback;
             videoEl.play().catch(() => { });
           });
 
@@ -3536,13 +3551,13 @@
             });
           }
         } catch (e) {
-          console.warn('mpegts creation error, using native video:', e);
+          console.warn('mpegts creation error, using direct native video:', e);
           destroyMpegtsPlayer();
-          videoEl.src = proxiedUrl;
+          videoEl.src = (window.tizen && rawStreamUrl) ? rawStreamUrl : initialUrl;
           videoEl.play().catch(() => { });
         }
       } else {
-        videoEl.src = proxiedUrl;
+        videoEl.src = initialUrl;
         const playPromise = videoEl.play();
         if (playPromise && playPromise.catch) {
           playPromise.catch(() => {
