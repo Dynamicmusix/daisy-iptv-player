@@ -3404,10 +3404,10 @@
     const prof = getActiveProfile();
     const endpoint = normalizePortalEndpoint(prof.host);
     let proxiedUrl = `${getApiBaseUrl()}/api/stream?url=${encodeURIComponent(rawStreamUrl)}&mac=${encodeURIComponent(prof.mac)}&stbType=${encodeURIComponent(prof.stbType || 'MAG250')}`;
+    if (endpoint) proxiedUrl += `&endpoint=${encodeURIComponent(endpoint)}`;
+    if (prof.token) proxiedUrl += `&token=${encodeURIComponent(prof.token)}`;
     if (!isLiveTs) {
       proxiedUrl += `&vod=1&ss=${Math.floor(state.vodSeekOffsetSec)}`;
-      if (endpoint) proxiedUrl += `&endpoint=${encodeURIComponent(endpoint)}`;
-      if (prof.token) proxiedUrl += `&token=${encodeURIComponent(prof.token)}`;
       if (state.activeVodRequest && state.activeVodRequest.cmd) {
         proxiedUrl += `&cmd=${encodeURIComponent(state.activeVodRequest.cmd)}`;
         proxiedUrl += `&series=${encodeURIComponent(state.activeVodRequest.series || '')}`;
@@ -3500,16 +3500,18 @@
       const initialUrl = isDirect ? rawStreamUrl : proxiedUrl;
       const mpegtsSupported = !isNative && !isDirect && Boolean(window.mpegts && window.mpegts.isSupported());
 
+      let directAttempted = false;
       videoEl.onerror = () => {
         console.warn('Native video error on src:', videoEl.src);
-        if (videoEl.src !== rawStreamUrl && rawStreamUrl) {
+        if (!directAttempted && rawStreamUrl) {
+          directAttempted = true;
           console.log('Attempting direct stream without proxy:', rawStreamUrl);
           document.getElementById('lv-stream-info').textContent = 'Connecting Direct Stream (Bypassing Proxy)...';
           videoEl.src = rawStreamUrl;
           videoEl.play().catch(() => {});
           return;
         }
-        document.getElementById('lv-stream-info').textContent = 'Stream error / blocked by provider (HTTP 456 or session in use).';
+        document.getElementById('lv-stream-info').textContent = 'Stream error / blocked by provider (HTTP 456). Line may be active on another device or cooling down.';
       };
 
       if (mpegtsSupported) {

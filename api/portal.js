@@ -15,7 +15,7 @@ function buildPortalHeaders(mac, stbType, refererHost, token) {
       'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3',
     'X-User-Agent': `Model: ${model}; Link: WiFi`,
     Accept: '*/*',
-    Cookie: `mac=${encodeURIComponent(safeMac)}; stb_lang=en; timezone=UTC`,
+    Cookie: `mac=${safeMac}; stb_lang=en; timezone=UTC`,
     Connection: 'close',
   };
   if (refererHost) {

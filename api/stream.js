@@ -14,17 +14,24 @@ try {
   ffmpegPath = require('ffmpeg-static');
 } catch (e) {}
 
-function buildPortalHeaders(mac, stbType) {
+function buildPortalHeaders(mac, stbType, refererHost, token) {
   const safeMac = mac || '00:1A:79:00:00:00';
   const model = stbType || 'MAG250';
-  return {
+  const headers = {
     'User-Agent':
       'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3',
     'X-User-Agent': `Model: ${model}; Link: WiFi`,
     Accept: '*/*',
-    Cookie: `mac=${encodeURIComponent(safeMac)}; stb_lang=en; timezone=UTC`,
+    Cookie: `mac=${safeMac}; stb_lang=en; timezone=UTC`,
     Connection: 'close',
   };
+  if (refererHost) {
+    headers['Referer'] = refererHost.replace(/\/+$/, '') + '/c/';
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
 }
 
 function proxyStream(targetUrlStr, method, headers, cb, redirectCount = 0) {
@@ -82,6 +89,8 @@ module.exports = (req, res) => {
   const streamUrl = reqUrl.searchParams.get('url');
   const mac = reqUrl.searchParams.get('mac') || '00:1A:79:00:00:00';
   const stbType = reqUrl.searchParams.get('stbType') || 'MAG250';
+  const endpoint = reqUrl.searchParams.get('endpoint') || '';
+  const token = reqUrl.searchParams.get('token') || '';
   const rawPassthrough = reqUrl.searchParams.get('raw') === '1';
   const isVod = reqUrl.searchParams.get('vod') === '1';
 
@@ -90,7 +99,7 @@ module.exports = (req, res) => {
     return res.end('Missing url parameter');
   }
 
-  const headers = buildPortalHeaders(mac, stbType);
+  const headers = buildPortalHeaders(mac, stbType, endpoint, token);
   if (req.headers.range) {
     headers['Range'] = req.headers.range;
   }
