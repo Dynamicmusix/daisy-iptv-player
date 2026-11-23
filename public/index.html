@@ -3,18 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>DAISY IPTV</title>
+  <title>DAISY IPTV — STALKER PORTAL</title>
   <link rel="icon" type="image/png" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
   <meta property="og:title" content="DAISY IPTV" />
-  <meta property="og:description" content="Universal Jetpack Compose IPTV and STB Player" />
+  <meta property="og:description" content="Original Infomir Stalker Portal UI" />
   <meta property="og:image" content="logo.png" />
   <script src="mpegts.js"></script>
   <style>
 
     /* ============================================================
-       DAISY IPTV v1.0.0 — Jetpack Compose for TV (androidx.tv:tv-material 1.1.0)
-       Compose BOM 2026.08.00 Design System (Material 3 for TV)
+       DAISY IPTV v1.0.0 — ORIGINAL INFOMIR STALKER PORTAL UI
+       Classic MAG250 / MAG254 / MAG256 Middleware Interface
+       - Authentic Stalker Dark Navy & Slate Theme (#081422 / #0C223B)
+       - Signature Golden Amber Active Highlight (linear-gradient #ffc800 to #e69100)
+       - Classic Stalker Horizontal Main Menu Carousel with Icons
+       - 3-Panel Split Live TV Interface (Categories + Channels + Preview/EPG)
+       - Authentic Remote Color Button Bar (Red, Green, Yellow, Blue)
+       - Stalker Loading Progress Bar with Block Fill
        ============================================================ */
     * {
       margin: 0;
@@ -24,66 +30,60 @@
     }
 
     :root {
-      /* M3 Dark Neutral Palette over near-black #070A0D */
-      --compose-bg: #070A0D;
-      --compose-surface: #0F1318;
-      --compose-surface-container-low: #13171E;
-      --compose-surface-container: #161C24;
-      --compose-surface-container-high: #1E2530;
-      --compose-surface-container-highest: #283240;
-      --compose-outline: rgba(255, 255, 255, 0.08);
-      --compose-outline-variant: rgba(255, 255, 255, 0.04);
-      --compose-scrim: rgba(5, 8, 10, 0.88);
+      /* Authentic Stalker Color Tokens */
+      --stb-bg: #050E18;
+      --stb-header-bg: linear-gradient(180deg, #16365C 0%, #0C213A 100%);
+      --stb-panel-bg: rgba(9, 23, 40, 0.94);
+      --stb-panel-surface: #0E243E;
+      --stb-panel-border: #1E3F66;
+      --stb-border-subtle: rgba(255, 255, 255, 0.10);
+      
+      /* Stalker Text Palette */
+      --stb-text: #FFFFFF;
+      --stb-text-secondary: #8EABC7;
+      --stb-text-dim: #5C7B9B;
+      --stb-text-shadow: 0 1px 2px #000;
 
-      /* Typography & Neutral Content Colors */
-      --text-primary: #F1F5F3;
-      --text-secondary: #A7B3AE;
-      --text-dim: #6D7A75;
-      --text-tag: #C8D3CE;
+      /* Signature Stalker Active Row Highlight */
+      --stb-active-bg: linear-gradient(180deg, #FFC800 0%, #E69100 100%);
+      --stb-active-border: #FFE066;
+      --stb-active-color: #002244;
+      --stb-active-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+      --stb-focus-ring: 0 0 0 2.5px #FFC800, 0 0 20px rgba(255, 200, 0, 0.5);
 
-      /* Signature Jetpack Compose for TV Accent (Electric Emerald/Lime #62C953 / #72D572) */
-      --accent: #62C953;
-      --accent-hover: #72D572;
-      --accent-dim: rgba(98, 201, 83, 0.18);
-      --accent-glow: rgba(98, 201, 83, 0.40);
-      --on-accent: #050E09;
+      /* Stalker Cyan Alternative Accent */
+      --stb-cyan: #1982D8;
+      --stb-cyan-glow: rgba(25, 130, 216, 0.4);
 
-      /* Focus Ring Token (2.5dp ring + outer soft glow) */
-      --focus-border: #72D572;
-      --focus-ring: 0 0 0 2.5px #72D572, 0 0 24px rgba(114, 213, 114, 0.42);
+      /* Color Remote Buttons */
+      --stb-red: #E52E2D;
+      --stb-green: #38A835;
+      --stb-yellow: #F0A500;
+      --stb-blue: #1A75D2;
 
-      /* Semantic Badges */
-      --live-red: #FF453A;
-      --star-gold: #FFB800;
-      --info-blue: #0A84FF;
-      --warning-amber: #FFB86B;
-
-      /* Motion Spec matching Compose for TV AnimationSpec */
-      --ease: cubic-bezier(0.2, 0.0, 0, 1.0);
-      --spring: cubic-bezier(0.22, 1.25, 0.45, 1.0);
-      --spring-card: cubic-bezier(0.18, 1.20, 0.35, 1.0);
+      --stb-radius: 6px;
+      --stb-ease: cubic-bezier(0.2, 0, 0, 1);
     }
 
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: var(--compose-bg);
-      color: var(--text-primary);
-      font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--stb-bg);
+      color: var(--stb-text);
+      font-family: "Ubuntu", "Trebuchet MS", "Lucida Grande", "Segoe UI", Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
       user-select: none;
     }
 
-    /* Subtle Ambient Gradient Accents */
-    .ambient-glow {
+    /* Stalker Background Texture */
+    .stb-canvas-bg {
       position: fixed;
       inset: 0;
-      pointer-events: none;
       z-index: 1;
-      background:
-        radial-gradient(1000px 700px at 0% 0%, rgba(98, 201, 83, 0.05) 0%, transparent 70%),
-        radial-gradient(1200px 800px at 100% 100%, rgba(10, 132, 255, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+      background: 
+        radial-gradient(120% 90% at 50% 0%, #16365C 0%, #0A1C30 50%, #050E18 100%);
     }
 
     /* ===================== VIDEO PLANE ===================== */
@@ -95,7 +95,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 260ms var(--ease);
+      transition: all 220ms ease;
     }
 
     video#daisy-video {
@@ -105,20 +105,20 @@
       background: #000;
     }
 
-    /* In Live TV view: dock video plane into the 16:9 preview box */
+    /* In Live TV view: dock video plane into the 16:9 preview window */
     body.in-live:not(.in-player) #video-plane {
       position: fixed;
-      left: calc(88px + 490px + 32px);
-      top: 32px;
-      width: 660px;
-      height: 371px; /* 16:9 */
-      max-width: calc(100vw - 640px);
-      max-height: calc((100vw - 640px) * 9 / 16);
-      border-radius: 20px;
+      left: calc(260px + 450px + 28px);
+      top: 96px;
+      width: 520px;
+      height: 292px; /* 16:9 */
+      max-width: calc(100vw - 760px);
+      max-height: calc((100vw - 760px) * 9 / 16);
+      border-radius: 6px;
       overflow: hidden;
       z-index: 10;
-      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.85);
-      border: 1px solid var(--compose-outline);
+      border: 2px solid var(--stb-panel-border);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
     }
 
     /* In Fullscreen Player: expand video plane to 100% */
@@ -132,21 +132,21 @@
       z-index: 0;
     }
 
-    /* In other views when not playing full video */
+    /* In other views when not in live TV */
     body:not(.in-live):not(.in-player) #video-plane {
       position: fixed;
       inset: 0;
       z-index: 0;
-      opacity: 0.15;
+      opacity: 0.12;
     }
 
-    /* ===================== CINEMATIC ARTWORK BACKDROP ===================== */
+    /* Artwork Backdrop */
     .bg {
       position: fixed;
       inset: 0;
       z-index: 2;
-      background: radial-gradient(120% 100% at 20% 0%, #151C24 0%, #0B0E12 55%, #05080A 100%);
-      transition: opacity 350ms ease;
+      background: #050E18;
+      transition: opacity 300ms ease;
       pointer-events: none;
     }
 
@@ -155,19 +155,17 @@
       inset: 0;
       background: center / cover no-repeat;
       opacity: 0;
-      transition: opacity 500ms ease;
+      transition: opacity 400ms ease;
     }
 
     .bg__img.is-on {
-      opacity: 0.42;
+      opacity: 0.35;
     }
 
     .bg__scrim {
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(90deg, rgba(7, 10, 13, 0.96) 0%, rgba(7, 10, 13, 0.72) 42%, rgba(7, 10, 13, 0.22) 75%, rgba(7, 10, 13, 0.08) 100%),
-        linear-gradient(180deg, rgba(7, 10, 13, 0.45) 0%, rgba(7, 10, 13, 0) 25%, rgba(7, 10, 13, 0.15) 55%, rgba(7, 10, 13, 0.92) 82%, #070A0D 100%);
+      background: linear-gradient(180deg, rgba(5,14,24,0.7) 0%, rgba(5,14,24,0.95) 100%);
     }
 
     body.in-live .bg,
@@ -175,269 +173,203 @@
       opacity: 0;
     }
 
-    /* ===================== JETPACK COMPOSE FOR TV: FOCUS SPEC ===================== */
+    /* ===================== STALKER FOCUS & ACTIVE STATES ===================== */
     .focusable:focus,
     .focusable.is-focused,
     .btn:focus,
     .btn.is-focused,
     .chip:focus,
     .chip.is-focused,
-    .tab:focus,
-    .tab.is-focused,
-    .ch-row:focus,
-    .ch-row.is-focused,
-    .card:focus,
-    .card.is-focused,
-    .pref-card:focus,
-    .pref-card.is-focused,
     .srow:focus,
     .srow.is-focused,
-    .gcell:focus,
-    .gcell.is-focused,
+    .pref-card:focus,
+    .pref-card.is-focused,
     .field-input:focus {
       outline: none !important;
-      border-color: var(--focus-border) !important;
-      box-shadow: var(--focus-ring) !important;
-      transform: scale(1.04);
-      z-index: 8;
+      background: var(--stb-active-bg) !important;
+      color: var(--stb-active-color) !important;
+      border-color: var(--stb-active-border) !important;
+      box-shadow: var(--stb-focus-ring) !important;
+      text-shadow: var(--stb-active-shadow) !important;
+      font-weight: bold;
+      transform: scale(1.02);
+      z-index: 10;
     }
 
-    /* ===================== 1. LEFT NAVIGATION RAIL (Compose NavigationDrawer) ===================== */
-    .rail {
+    .focusable:focus *,
+    .focusable.is-focused * {
+      color: var(--stb-active-color) !important;
+      text-shadow: var(--stb-active-shadow) !important;
+    }
+
+    /* ===================== 1. STALKER TOP HEADER BAR ===================== */
+    .stb-header {
       position: fixed;
-      left: 18px;
-      top: 18px;
-      bottom: 18px;
-      width: 66px;
-      border-radius: 33px;
-      background: rgba(16, 21, 26, 0.95);
-      border: 1px solid var(--compose-outline);
-      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      z-index: 50;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background: var(--stb-header-bg);
+      border-bottom: 2px solid var(--stb-panel-border);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 6px;
-      transition: transform 260ms var(--ease), opacity 260ms ease;
+      padding: 0 28px;
+      z-index: 50;
+      transition: transform 240ms ease, opacity 240ms ease;
     }
 
-    body.in-player .rail {
+    body.in-player .stb-header {
+      transform: translateY(-80px);
       opacity: 0;
-      transform: translateX(-100px);
       pointer-events: none;
     }
 
-    .rail__brand {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
+    .stb-header__brand {
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 12px;
       cursor: pointer;
-      overflow: hidden;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
-      transition: transform 180ms var(--spring), box-shadow 160ms ease;
-      flex: none;
     }
 
-    .rail__logo {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .stb-header__logo-img {
+      height: 38px;
+      object-fit: contain;
     }
 
-    .rail__tabs {
+    .stb-header__title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #FFF;
+      text-shadow: 0 2px 4px #000;
+    }
+
+    .stb-header__ver {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--stb-text-secondary);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .stb-header__right {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .stb-header__portal-chip {
+      display: flex;
       align-items: center;
       gap: 8px;
-      margin: auto 0;
-    }
-
-    .rail__tab {
-      position: relative;
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
+      padding: 6px 14px;
+      border-radius: 4px;
+      background: #0B1C30;
+      border: 1px solid var(--stb-panel-border);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--stb-text-secondary);
       cursor: pointer;
-      transition: transform 180ms var(--spring), background 160ms ease, color 160ms ease, box-shadow 160ms ease;
     }
 
-    .rail__tab svg {
-      width: 22px;
-      height: 22px;
-      fill: currentColor;
+    .stb-header__date {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--stb-text-secondary);
+      text-transform: capitalize;
     }
 
-    .rail__tab:hover {
-      color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    /* Active Selected Rail Tab (Jetpack Compose Pill) */
-    .rail__tab.is-current {
-      background: var(--accent);
-      color: var(--on-accent);
-    }
-
-    .rail__tab.is-current .rail__dot {
-      position: absolute;
-      right: -10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 3.5px;
-      height: 12px;
-      border-radius: 2px;
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
-    }
-
-    .rail__tab:focus,
-    .rail__tab.is-focused {
-      transform: scale(1.16);
-      box-shadow: var(--focus-ring);
-      z-index: 5;
-    }
-
-    .rail__profile {
-      width: 42px;
-      height: 42px;
-      border-radius: 21px;
-      background: #00BCD4;
-      color: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
+    .stb-header__clock {
+      font-size: 26px;
       font-weight: 800;
-      cursor: pointer;
-      transition: transform 180ms var(--spring), box-shadow 160ms ease;
-      flex: none;
+      color: #FFF;
+      font-family: monospace, sans-serif;
+      text-shadow: 0 1px 3px #000;
     }
 
-    /* ===================== 2. TOP RIGHT HUD (Compose TV TopBar) ===================== */
-    .top-hud {
+    /* ===================== 2. STALKER BOTTOM COLOR BUTTONS BAR ===================== */
+    .stb-footer {
       position: fixed;
-      right: 36px;
-      top: 22px;
-      height: 44px;
-      z-index: 45;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      background: linear-gradient(180deg, #0C213A 0%, #071424 100%);
+      border-top: 2px solid var(--stb-panel-border);
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.7);
       display: flex;
       align-items: center;
-      gap: 14px;
-      pointer-events: auto;
-      transition: opacity 260ms ease, transform 260ms ease;
+      justify-content: space-between;
+      padding: 0 28px;
+      z-index: 50;
+      transition: transform 240ms ease, opacity 240ms ease;
     }
 
-    body.in-player .top-hud {
+    body.in-player .stb-footer {
+      transform: translateY(60px);
       opacity: 0;
-      transform: translateY(-40px);
       pointer-events: none;
     }
 
-    .hud-chip {
-      height: 38px;
-      padding: 0 16px;
-      border-radius: 19px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
+    .stb-color-btns {
       display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .stb-color-btn {
+      display: inline-flex;
       align-items: center;
       gap: 8px;
       font-size: 13px;
       font-weight: 700;
-      color: var(--text-primary);
-      cursor: pointer;
-      transition: transform 180ms var(--spring), box-shadow 160ms ease, border-color 160ms ease;
-    }
-
-    .hud-chip__icon {
-      font-size: 14px;
-    }
-
-    .hud-chip__caret {
-      font-size: 10px;
-      color: var(--text-dim);
-    }
-
-    .hud-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    .hud-info__dot {
-      color: var(--text-dim);
-    }
-
-    .hud-clock {
-      font-size: 26px;
-      font-weight: 800;
-      color: var(--accent);
-      letter-spacing: 0.5px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
-      margin-left: 4px;
-    }
-
-    /* ===================== 3. BOTTOM REMOTE KEY HINTS ===================== */
-    .key-hints-bar {
-      position: fixed;
-      right: 36px;
-      bottom: 18px;
-      z-index: 45;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      pointer-events: none;
-      transition: opacity 260ms ease;
-    }
-
-    body.in-player .key-hints-bar {
-      opacity: 0;
-    }
-
-    .key-hint {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-
-    .key-hint kbd {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 3px 8px;
-      border-radius: 6px;
-      color: #fff;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 800;
+      color: #FFF;
+      text-transform: uppercase;
       letter-spacing: 0.3px;
     }
 
-    /* ===================== 4. VIEWS CONTAINER ===================== */
+    .color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+      flex: none;
+    }
+
+    .color-dot--red { background: var(--stb-red); }
+    .color-dot--green { background: var(--stb-green); }
+    .color-dot--yellow { background: var(--stb-yellow); }
+    .color-dot--blue { background: var(--stb-blue); }
+
+    .stb-nav-hint {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--stb-text-secondary);
+    }
+
+    .stb-nav-hint kbd {
+      background: #112842;
+      border: 1px solid var(--stb-panel-border);
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: #FFF;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    /* ===================== 3. VIEWS CONTAINER ===================== */
     .views {
       position: fixed;
-      left: 96px;
+      left: 0;
       right: 0;
-      top: 0;
-      bottom: 0;
+      top: 72px;
+      bottom: 52px;
       z-index: 5;
       overflow: hidden;
     }
@@ -449,7 +381,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       scrollbar-width: none;
-      padding-bottom: 70px;
+      padding: 16px 28px;
     }
 
     .view::-webkit-scrollbar {
@@ -458,12 +390,12 @@
 
     .view.is-on {
       display: block;
-      animation: composeViewIn 220ms var(--ease);
+      animation: stbViewIn 180ms ease;
     }
 
-    @keyframes composeViewIn {
-      from { opacity: 0; transform: scale(0.99); }
-      to { opacity: 1; transform: scale(1); }
+    @keyframes stbViewIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     body.in-player .views {
@@ -471,396 +403,269 @@
       pointer-events: none;
     }
 
-    /* ===================== BUTTONS & CHIPS ===================== */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      height: 46px;
-      padding: 0 22px;
-      border-radius: 23px;
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text-primary);
-      background: var(--compose-surface-container-high);
-      border: 1px solid var(--compose-outline);
-      cursor: pointer;
-      transition: transform 180ms var(--spring), background 150ms ease, color 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
-      white-space: nowrap;
-    }
-
-    .btn--primary {
-      background: var(--accent);
-      color: var(--on-accent);
-      border-color: transparent;
-    }
-
-    .btn--danger {
-      background: rgba(255, 69, 58, 0.18);
-      color: #FF6961;
-      border-color: rgba(255, 69, 58, 0.3);
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      height: 38px;
-      padding: 0 16px;
-      border-radius: 19px;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: transform 160ms var(--spring), background 140ms ease, color 140ms ease, border-color 140ms ease;
-      flex: none;
-    }
-
-    .chip:hover {
-      color: var(--text-primary);
-      background: var(--compose-surface-container-high);
-    }
-
-    .chip.is-current {
-      background: var(--accent-dim);
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .chip__n {
-      margin-left: 6px;
-      font-size: 12px;
-      opacity: 0.7;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      height: 22px;
-      padding: 0 6px;
-      border-radius: 6px;
-      background: var(--compose-surface-container-highest);
-      border: 1px solid var(--compose-outline);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-tag);
-      letter-spacing: 0.3px;
-    }
-
-    .badge--live {
-      background: var(--live-red);
-      color: #fff;
-      border: none;
-    }
-
-    .imdb {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      height: 22px;
-      padding: 0 6px 0 3px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .imdb b {
-      padding: 1px 4px;
-      border-radius: 4px;
-      background: var(--star-gold);
-      color: #000;
-      font-size: 10px;
-      font-weight: 900;
-    }
-
-    /* ===================== VIEW A: HOME (Hero + Horizontal Shelves) ===================== */
-    .hero {
-      position: relative;
-      min-height: 52vh;
-      padding: 70px 48px 24px;
+    /* ===================== VIEW A: HOME (Stalker Main Menu Carousel) ===================== */
+    #v-home {
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
+      justify-content: space-between;
+      padding: 30px 40px;
     }
 
-    .hero__kicker {
-      display: inline-flex;
+    .stb-hero-banner {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
+      background: var(--stb-panel-bg);
+      border: 1px solid var(--stb-panel-border);
+      border-radius: var(--stb-radius);
+      padding: 20px 28px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      margin-bottom: 24px;
     }
 
-    .hero__title {
-      font-size: clamp(36px, 4.2vw, 58px);
+    .stb-hero-left {
+      max-width: 65%;
+    }
+
+    .stb-hero-title {
+      font-size: 32px;
       font-weight: 800;
-      letter-spacing: -1px;
-      line-height: 1.05;
-      max-width: 800px;
-      margin-bottom: 12px;
-      color: var(--text-primary);
+      color: #FFF;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px #000;
     }
 
-    .hero__meta {
+    .stb-hero-desc {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--stb-text-secondary);
+      margin-bottom: 14px;
+    }
+
+    .stb-hero-actions {
       display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 12px;
-    }
-
-    .hero__desc {
-      max-width: 660px;
-      font-size: 16px;
-      line-height: 1.45;
-      color: var(--text-secondary);
-      margin-bottom: 22px;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .hero__btns {
-      display: flex;
-      flex-wrap: wrap;
       gap: 12px;
     }
 
-    .hero__dots {
-      position: absolute;
-      right: 48px;
-      bottom: 28px;
-      display: flex;
-      gap: 6px;
+    /* Stalker Main Menu Carousel */
+    .stb-mm-carousel {
+      margin-top: auto;
+      padding: 14px 0 20px;
     }
 
-    .hero__dots i {
-      width: 18px;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255, 255, 255, 0.2);
-      transition: width 240ms var(--ease), background 240ms ease;
-    }
-
-    .hero__dots i.is-on {
-      width: 32px;
-      background: var(--accent);
-    }
-
-    .rows {
-      padding: 10px 0 80px;
-    }
-
-    .row {
-      margin-bottom: 28px;
-    }
-
-    .row__title {
-      padding: 0 48px;
+    .stb-mm-heading {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--stb-text-dim);
       margin-bottom: 12px;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
-    .row__title small {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-dim);
-    }
-
-    .row__strip {
+    .stb-mm-strip {
       display: flex;
       gap: 18px;
-      padding: 8px 48px 16px;
       overflow-x: auto;
       scrollbar-width: none;
+      padding: 10px 4px 18px;
     }
 
-    .row__strip::-webkit-scrollbar {
-      display: none;
-    }
-
-    /* Compose TV Card Component */
-    .card {
-      position: relative;
-      flex: none;
-      cursor: pointer;
-      transition: transform 200ms var(--spring-card);
-    }
-
-    .card__art {
-      position: relative;
-      border-radius: 14px;
-      overflow: hidden;
-      background: var(--compose-surface-container) center / cover no-repeat;
-      border: 1px solid var(--compose-outline);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    }
-
-    .card--poster {
-      width: 160px;
-    }
-
-    .card--poster .card__art {
-      width: 160px;
-      height: 240px;
-    }
-
-    .card--wide {
-      width: 280px;
-    }
-
-    .card--wide .card__art {
-      width: 280px;
-      height: 158px;
-    }
-
-    .card__rate {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      z-index: 2;
-    }
-
-    .card__cap {
-      margin-top: 8px;
-      font-size: 14px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--text-primary);
-    }
-
-    .card__sub {
-      margin-top: 2px;
-      font-size: 12px;
-      color: var(--text-dim);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* ===================== VIEW B: LIVE TV (Split View matching LiveTV_with_PreviewON.png) ===================== */
-    #v-live.is-on {
-      display: grid;
-      grid-template-columns: 490px 1fr;
-      gap: 32px;
-      padding: 24px 36px 36px 24px;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    .lv__left-col {
+    .stb-mm-tile {
+      width: 175px;
+      height: 155px;
+      background: linear-gradient(180deg, #122C4A 0%, #091A2E 100%);
+      border: 2px solid var(--stb-panel-border);
+      border-radius: 8px;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      flex: none;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+      transition: transform 160ms var(--stb-ease), border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .stb-mm-tile:hover {
+      border-color: #386A9E;
+      background: linear-gradient(180deg, #183C66 0%, #0E2642 100%);
+    }
+
+    .stb-mm-tile.is-focused,
+    .stb-mm-tile:focus {
+      background: var(--stb-active-bg) !important;
+      border-color: var(--stb-active-border) !important;
+      box-shadow: var(--stb-focus-ring) !important;
+      transform: scale(1.08);
+      z-index: 10;
+    }
+
+    .stb-mm-tile.is-focused *,
+    .stb-mm-tile:focus * {
+      color: var(--stb-active-color) !important;
+      text-shadow: var(--stb-active-shadow) !important;
+    }
+
+    .stb-mm-tile__icon {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .stb-mm-tile__icon img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .stb-mm-tile__title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #FFF;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Shelves on Home below hero */
+    .rows {
+      display: none;
+    }
+
+    /* ===================== VIEW B: LIVE TV (Classic Stalker 3-Panel Split) ===================== */
+    #v-live.is-on {
+      display: grid;
+      grid-template-columns: 240px 460px 1fr;
+      gap: 16px;
+      padding: 16px 20px;
       height: 100%;
       overflow: hidden;
     }
 
-    .lv__header-top {
+    /* Left Panel: Categories List */
+    .stb-cat-col {
+      background: var(--stb-panel-bg);
+      border: 1px solid var(--stb-panel-border);
+      border-radius: var(--stb-radius);
       display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 8px;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
     }
 
-    .lv__heading {
-      font-size: 32px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--text-primary);
-    }
-
-    .lv__channel-count {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    .lv__search-box {
-      margin-bottom: 10px;
-    }
-
-    .lv__chipstrip {
+    .stb-panel-head {
+      height: 38px;
+      background: linear-gradient(180deg, #173B64 0%, #0E2540 100%);
+      border-bottom: 1px solid var(--stb-panel-border);
       display: flex;
       align-items: center;
-      gap: 8px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding: 4px 2px 10px;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #FFF;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       flex: none;
     }
 
-    .lv__chipstrip::-webkit-scrollbar {
-      display: none;
-    }
-
-    /* Vertical Channel Card Stack (#lv-cardstrip) */
-    .lv__cardstrip {
+    .stb-cat-list {
       flex: 1;
       overflow-y: auto;
       scrollbar-width: none;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 4px 4px 40px 2px;
+      padding: 4px 0;
     }
 
-    .lv__cardstrip::-webkit-scrollbar {
-      display: none;
-    }
-
-    /* Compose TV Channel Card Row (.lcard) */
-    .lcard {
-      width: 100%;
-      height: 68px;
-      padding: 8px 14px;
-      border-radius: 14px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
+    .stb-cat-row {
+      height: 38px;
+      padding: 0 14px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--stb-text-secondary);
       cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       flex: none;
-      transition: transform 180ms var(--spring), box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .stb-cat-row.is-active {
+      background: #14355A;
+      color: #FFF;
+      font-weight: 700;
+      border-left: 3px solid #FFC800;
+    }
+
+    /* Center Panel: Channel List */
+    .stb-ch-col {
+      background: var(--stb-panel-bg);
+      border: 1px solid var(--stb-panel-border);
+      border-radius: var(--stb-radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+    }
+
+    .stb-ch-list {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+      display: flex;
+      flex-direction: column;
+      padding: 4px 0;
+    }
+
+    /* Stalker Channel Row (.lcard) */
+    .lcard {
+      height: 48px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      flex: none;
+      transition: background 120ms ease;
+    }
+
+    .lcard:hover {
+      background: #102B4A;
     }
 
     .lcard.is-playing {
-      border-left: 4px solid var(--accent);
-      background: var(--compose-surface-container-high);
+      background: #133256;
+      border-left: 4px solid var(--stb-cyan);
     }
 
-    .lv__cardstrip .lcard__art {
-      width: 52px;
-      height: 40px;
-      border-radius: 8px;
+    .lcard__num {
+      width: 32px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--stb-text-dim);
+      text-align: right;
+      flex: none;
+    }
+
+    .lcard__art {
+      width: 34px;
+      height: 28px;
       background: #000;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
-      flex: none;
       overflow: hidden;
-      border: 1px solid var(--compose-outline);
+      flex: none;
+      border: 1px solid var(--stb-panel-border);
     }
 
     .lcard__logo {
@@ -870,23 +675,9 @@
     }
 
     .lcard__logotxt {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      color: var(--text-dim);
-      text-align: center;
-    }
-
-    .lcard__num {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-dim);
-      width: 34px;
-      text-align: center;
-      flex: none;
-    }
-
-    .lcard.is-playing .lcard__num {
-      color: var(--accent);
+      color: var(--stb-text-dim);
     }
 
     .lcard__info {
@@ -894,22 +685,22 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
     }
 
     .lcard__t {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
-      color: var(--text-primary);
+      color: #FFF;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .lcard__p {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
-      color: var(--text-secondary);
+      color: var(--stb-text-secondary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -918,288 +709,198 @@
     .lcard__side {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex: none;
       margin-left: auto;
     }
 
     .lcard__q {
-      font-size: 10px;
-      font-weight: 800;
-      padding: 1px 4px;
-      border-radius: 4px;
-      background: var(--compose-surface-container-highest);
-      color: var(--text-tag);
-      border: 1px solid var(--compose-outline);
-      flex: none;
-    }
-
-    .lcard__fav {
-      font-size: 16px;
-      color: var(--star-gold);
-      flex: none;
-      cursor: pointer;
-    }
-
-    .lcard__bar {
-      display: none;
-    }
-
-    /* Inside Home Horizontal Shelves (.row__strip) */
-    .row__strip .lcard {
-      width: 220px;
-      flex: none;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 12px;
-      border-radius: 16px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
-      cursor: pointer;
-      transition: transform 180ms var(--spring), box-shadow 160ms ease;
-    }
-
-    .row__strip .lcard .lcard__art {
-      width: 100%;
-      height: 110px;
-      border-radius: 10px;
-      background: var(--compose-surface-container-high);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-      margin-bottom: 8px;
-    }
-
-    .row__strip .lcard .lcard__num {
-      position: absolute;
-      top: 6px;
-      left: 8px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-dim);
-    }
-
-    .row__strip .lcard .lcard__q {
-      position: absolute;
-      top: 6px;
-      right: 8px;
       font-size: 9px;
       font-weight: 800;
       padding: 1px 4px;
       border-radius: 3px;
-      background: var(--compose-surface-container-highest);
-      color: var(--text-tag);
+      background: #17385E;
+      color: #8EABC7;
+      border: 1px solid var(--stb-panel-border);
     }
 
-    .row__strip .lcard .lcard__fav {
-      position: absolute;
-      bottom: 6px;
-      right: 8px;
+    .lcard__fav {
       font-size: 14px;
-      color: var(--star-gold);
+      color: var(--stb-yellow);
+      cursor: pointer;
     }
 
-    .row__strip .lcard .lcard__t {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      width: 100%;
-    }
-
-    .row__strip .lcard .lcard__p {
-      font-size: 12px;
-      color: var(--text-dim);
-      margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      width: 100%;
-    }
-
-    /* Live TV Right Column: 16:9 Preview Window + Program Details */
-    .lv__right-col {
+    /* Right Panel: Live Preview & EPG Info */
+    .stb-preview-col {
       display: flex;
       flex-direction: column;
+      gap: 14px;
       height: 100%;
       overflow-y: auto;
       scrollbar-width: none;
-      padding-right: 12px;
     }
 
-    .lv__right-col::-webkit-scrollbar {
-      display: none;
-    }
-
-    .lv__preview-window {
+    .stb-preview-box {
       width: 100%;
-      max-width: 680px;
       aspect-ratio: 16 / 9;
-      border-radius: 20px;
       background: #000;
-      border: 1px solid var(--compose-outline);
+      border: 2px solid var(--stb-panel-border);
+      border-radius: var(--stb-radius);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
       position: relative;
       overflow: hidden;
-      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.85);
+      cursor: pointer;
       flex: none;
-      margin-bottom: 18px;
     }
 
-    .lv__preview-badge-live {
+    .stb-preview-badge-live {
       position: absolute;
-      top: 14px;
-      left: 14px;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(8px);
-      padding: 4px 10px;
-      border-radius: 6px;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 3px 8px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       gap: 6px;
       font-size: 11px;
       font-weight: 800;
-      color: #fff;
+      color: #FFF;
       z-index: 5;
     }
 
-    .lv__preview-badge-live .live-dot {
+    .live-dot {
       width: 8px;
       height: 8px;
       border-radius: 4px;
-      background: var(--live-red);
-      box-shadow: 0 0 8px var(--live-red);
+      background: var(--stb-red);
+      box-shadow: 0 0 6px var(--stb-red);
     }
 
-    .lv__preview-badge-res {
+    .stb-preview-badge-res {
       position: absolute;
-      top: 14px;
-      right: 14px;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(8px);
-      padding: 4px 8px;
-      border-radius: 6px;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 3px 6px;
+      border-radius: 4px;
       font-size: 11px;
       font-weight: 700;
-      color: var(--text-secondary);
+      color: var(--stb-text-secondary);
       z-index: 5;
     }
 
-    .lv__preview-footer {
+    .stb-preview-footer {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      padding: 12px 18px;
-      background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.88) 100%);
+      padding: 8px 12px;
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.9) 100%);
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       z-index: 5;
     }
 
-    .lv__hero {
-      max-width: 680px;
+    .stb-epg-panel {
+      flex: 1;
+      background: var(--stb-panel-bg);
+      border: 1px solid var(--stb-panel-border);
+      border-radius: var(--stb-radius);
+      padding: 14px 18px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
     }
 
-    .lv__brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .lv__chname {
+    .stb-epg-title {
       font-size: 18px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .lv__title {
-      font-size: 28px;
       font-weight: 800;
-      color: var(--text-primary);
-      line-height: 1.15;
+      color: #FFF;
+      line-height: 1.2;
     }
 
-    .lv__meta {
+    .stb-epg-time-row {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-size: 14px;
-      color: var(--text-secondary);
+      font-size: 13px;
+      color: var(--stb-text-secondary);
     }
 
-    .lv__meta .bar {
+    .stb-epg-bar {
       flex: 1;
-      max-width: 240px;
-      height: 4px;
+      height: 5px;
       border-radius: 2px;
-      background: rgba(255, 255, 255, 0.16);
+      background: #112842;
       overflow: hidden;
     }
 
-    .lv__meta .bar i {
+    .stb-epg-bar i {
       display: block;
       height: 100%;
-      background: var(--accent);
+      background: var(--stb-yellow);
       border-radius: 2px;
     }
 
-    .lv__desc {
-      font-size: 14px;
+    .stb-epg-desc {
+      font-size: 13px;
       line-height: 1.45;
-      color: var(--text-secondary);
-      max-width: 660px;
+      color: var(--stb-text-secondary);
+      max-height: 70px;
+      overflow: hidden;
     }
 
-    .lv__actions {
+    .stb-upcoming-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+      border-top: 1px solid var(--stb-panel-border);
+      padding-top: 8px;
+    }
+
+    .stb-upcoming-row {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 4px;
-    }
-
-    .lv__next {
-      display: flex;
-      flex-wrap: wrap;
       gap: 8px;
-      margin-top: 6px;
+      font-size: 12px;
+      color: var(--stb-text-secondary);
     }
 
-    /* ===================== VIEW C: GUIDE / EPG (EPG_loaded.png) ===================== */
+    .stb-upcoming-time {
+      font-weight: 700;
+      color: var(--stb-yellow);
+      width: 48px;
+    }
+
+    /* ===================== VIEW C: GUIDE / EPG ===================== */
     #v-guide.is-on {
-      padding: 70px 48px 40px;
+      padding: 16px 28px;
       display: flex;
       flex-direction: column;
       height: 100%;
     }
 
     .guide__top {
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .guide__title {
-      font-size: 30px;
+      font-size: 26px;
       font-weight: 800;
-      color: var(--text-primary);
-      margin: 8px 0 4px;
+      color: #FFF;
+      margin: 6px 0;
     }
 
     .guide__meta {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 14px;
-      color: var(--text-secondary);
+      font-size: 13px;
+      color: var(--stb-text-secondary);
     }
 
     .guide__grid {
@@ -1208,26 +909,26 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      border-radius: 16px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
-      padding: 12px;
+      border-radius: var(--stb-radius);
+      background: var(--stb-panel-bg);
+      border: 1px solid var(--stb-panel-border);
+      padding: 10px;
     }
 
     .guide__ruler {
       display: grid;
-      grid-template-columns: 200px repeat(4, 1fr);
-      gap: 8px;
-      padding: 8px 10px;
-      font-size: 13px;
+      grid-template-columns: 180px repeat(4, 1fr);
+      gap: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
       font-weight: 700;
-      color: var(--text-secondary);
-      border-bottom: 1px solid var(--compose-outline);
+      color: var(--stb-text-secondary);
+      border-bottom: 1px solid var(--stb-panel-border);
     }
 
     .guide__ruler span {
-      padding-left: 8px;
-      border-left: 2px solid var(--compose-outline);
+      padding-left: 6px;
+      border-left: 2px solid var(--stb-panel-border);
     }
 
     .guide__body {
@@ -1237,77 +938,78 @@
       scrollbar-width: none;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding-top: 8px;
+      gap: 6px;
+      padding-top: 6px;
     }
 
     .guide__now {
       position: absolute;
       top: 0;
       bottom: 0;
-      left: 260px;
-      width: 2.5px;
-      background: var(--accent);
-      box-shadow: 0 0 10px var(--accent);
+      left: 240px;
+      width: 2px;
+      background: var(--stb-yellow);
+      box-shadow: 0 0 8px var(--stb-yellow);
       z-index: 6;
       pointer-events: none;
     }
 
     .grow {
       display: grid;
-      grid-template-columns: 200px 1.2fr 1fr 1fr 1fr;
-      gap: 8px;
-      min-height: 56px;
+      grid-template-columns: 180px 1.2fr 1fr 1fr 1fr;
+      gap: 6px;
+      min-height: 48px;
     }
 
     .grow__ch {
-      border-radius: 10px;
-      background: var(--compose-surface-container-high);
+      border-radius: 4px;
+      background: #0E243E;
       display: flex;
       align-items: center;
-      padding: 0 10px;
-      gap: 8px;
+      padding: 0 8px;
+      gap: 6px;
       cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
     }
 
     .gcell {
-      border-radius: 10px;
-      padding: 8px 12px;
-      background: var(--compose-surface-container-high);
-      border: 1px solid var(--compose-outline);
+      border-radius: 4px;
+      padding: 6px 10px;
+      background: #0B1C30;
+      border: 1px solid var(--stb-panel-border);
       display: flex;
       flex-direction: column;
       justify-content: center;
       cursor: pointer;
-      transition: transform 160ms var(--spring), box-shadow 140ms ease;
     }
 
     .gcell.is-now {
-      border-left: 3px solid var(--accent);
+      border-left: 3px solid var(--stb-yellow);
     }
 
     .gcell__t {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
-      color: var(--text-primary);
+      color: #FFF;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .gcell__h {
-      font-size: 11px;
-      color: var(--text-dim);
-      margin-top: 2px;
+      font-size: 10px;
+      color: var(--stb-text-dim);
+      margin-top: 1px;
     }
 
-    /* ===================== VIEW D & E: MOVIES & SERIES (Movies.png) ===================== */
+    /* ===================== VIEW D & E: MOVIES & SERIES (Video Club) ===================== */
     .vod-header {
-      padding: 70px 48px 12px;
+      padding: 10px 0 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 14px;
     }
 
     .vod__chipstrip {
@@ -1320,61 +1022,91 @@
     }
 
     .vod__count {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--stb-yellow);
       white-space: nowrap;
     }
 
     .vod__grid {
-      padding: 12px 48px 80px;
+      padding: 8px 0 60px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    /* Poster Card */
+    .card {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .card__art {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #0A1C30 center / cover no-repeat;
+      border: 1px solid var(--stb-panel-border);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+      width: 100%;
+      height: 220px;
+    }
+
+    .card__rate {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+    }
+
+    .card__cap {
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #FFF;
+    }
+
+    .card__sub {
+      margin-top: 1px;
+      font-size: 11px;
+      color: var(--stb-text-dim);
     }
 
     /* ===================== VIEW F: SEARCH ===================== */
     .search-wrap {
-      padding: 70px 48px 60px;
-      max-width: 1080px;
+      padding: 20px 20px 60px;
+      max-width: 900px;
     }
 
     .search__field {
       width: 100%;
-      height: 58px;
-      border-radius: 29px;
-      padding: 0 24px;
+      height: 50px;
+      border-radius: 4px;
+      padding: 0 16px;
       display: flex;
       align-items: center;
-      gap: 14px;
-      background: var(--compose-surface-container);
-      border: 1.5px solid var(--compose-outline);
-      margin-bottom: 24px;
-      transition: border-color 160ms ease, box-shadow 160ms ease;
-    }
-
-    .search__field:focus-within {
-      border-color: var(--focus-border);
-      box-shadow: var(--focus-ring);
+      gap: 12px;
+      background: #0B1C30;
+      border: 1px solid var(--stb-panel-border);
+      margin-bottom: 20px;
     }
 
     .search__input {
       flex: 1;
       background: transparent;
       border: none;
-      color: var(--text-primary);
-      font-size: 20px;
+      color: #FFF;
+      font-size: 18px;
       font-weight: 600;
       outline: none;
     }
 
-    .search__input::placeholder {
-      color: var(--text-dim);
-    }
-
-    /* ===================== VIEW G: SETTINGS (Two-Pane Compose TV matching Settings_Main.png) ===================== */
+    /* ===================== VIEW G: SETTINGS (Classic Stalker Settings Layout) ===================== */
     #v-settings.is-on {
-      padding: 60px 48px 40px;
+      padding: 16px 20px;
       height: 100%;
       overflow: hidden;
     }
@@ -1382,221 +1114,183 @@
     .settings-container {
       display: grid;
       grid-template-columns: 280px 1fr;
-      gap: 36px;
+      gap: 20px;
       height: 100%;
     }
 
-    /* Left Sidebar */
     .settings-nav {
+      background: var(--stb-panel-bg);
+      border: 1px solid var(--stb-panel-border);
+      border-radius: var(--stb-radius);
       display: flex;
       flex-direction: column;
-      gap: 8px;
       overflow-y: auto;
       scrollbar-width: none;
-      padding-right: 6px;
+      padding: 8px;
+      gap: 4px;
     }
 
     .settings-profile-card {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 14px;
-      border-radius: 16px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
-      margin-bottom: 12px;
-      flex: none;
+      padding: 10px 12px;
+      border-radius: 4px;
+      background: #0A1E34;
+      border: 1px solid var(--stb-panel-border);
+      margin-bottom: 8px;
     }
 
     .settings-profile-card__avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 19px;
-      background: #00BCD4;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      background: var(--stb-cyan);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 16px;
-      flex: none;
     }
 
     .settings-nav-section-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: var(--text-dim);
-      padding: 8px 12px 4px;
+      letter-spacing: 1px;
+      color: var(--stb-text-dim);
+      padding: 6px 10px 2px;
     }
 
     .settings-nav-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 44px;
-      padding: 0 14px;
-      border-radius: 12px;
-      font-size: 14px;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 4px;
+      font-size: 13px;
       font-weight: 600;
-      color: var(--text-secondary);
+      color: var(--stb-text-secondary);
       background: transparent;
       cursor: pointer;
       border: 1px solid transparent;
-      transition: background 150ms ease, color 150ms ease, transform 150ms var(--spring);
     }
 
     .settings-nav-item.is-selected {
-      background: var(--compose-surface-container-high);
-      color: var(--accent);
-      border-left: 3px solid var(--accent);
-    }
-
-    .settings-nav-item:hover {
-      background: var(--compose-surface-container);
-      color: var(--text-primary);
-    }
-
-    .settings-nav-item__badge {
-      font-size: 12px;
+      background: #102B4A;
+      color: #FFF;
       font-weight: 700;
-      color: var(--text-dim);
+      border-left: 3px solid var(--stb-yellow);
     }
 
-    /* Right Main Content (3-Column Category Grid or Detail View) */
     .settings-main {
+      background: var(--stb-panel-bg);
+      border: 1px solid var(--stb-panel-border);
+      border-radius: var(--stb-radius);
       display: flex;
       flex-direction: column;
       height: 100%;
       overflow-y: auto;
       scrollbar-width: none;
-      padding-right: 12px;
+      padding: 16px 20px;
     }
 
     .settings-main-heading {
-      font-size: 32px;
+      font-size: 22px;
       font-weight: 800;
-      color: var(--text-primary);
-      margin-bottom: 16px;
+      color: #FFF;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--stb-panel-border);
+      padding-bottom: 8px;
     }
 
     .settings-grid-3col {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      padding-bottom: 60px;
+      gap: 12px;
+      padding-bottom: 40px;
     }
 
-    /* Compose TV Preference Card */
     .pref-card {
-      padding: 16px 18px;
-      border-radius: 16px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
+      padding: 14px 16px;
+      border-radius: 6px;
+      background: #0A1C30;
+      border: 1px solid var(--stb-panel-border);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 110px;
+      min-height: 95px;
       cursor: pointer;
-      transition: transform 180ms var(--spring), box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
-    }
-
-    .pref-card:hover {
-      background: var(--compose-surface-container-high);
-    }
-
-    .pref-card__top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .pref-card__icon {
-      font-size: 20px;
-    }
-
-    .pref-card__count {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-dim);
     }
 
     .pref-card__title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
-      color: var(--text-primary);
+      color: #FFF;
       margin-bottom: 4px;
     }
 
     .pref-card__desc {
-      font-size: 12px;
+      font-size: 11px;
       line-height: 1.35;
-      color: var(--text-secondary);
+      color: var(--stb-text-secondary);
     }
 
-    /* Settings Category Detailed View (matching Settings_Profiles.png) */
     .settings-detail-pane {
       display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 28px;
-      padding-bottom: 60px;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+      padding-bottom: 40px;
     }
 
     .settings-rows-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
     }
 
     .srow {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 54px;
-      padding: 10px 20px;
-      border-radius: 14px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
-      font-size: 15px;
+      height: 44px;
+      padding: 0 16px;
+      border-radius: 4px;
+      background: #0A1C30;
+      border: 1px solid var(--stb-panel-border);
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      gap: 16px;
-      transition: transform 180ms var(--spring), box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
-    }
-
-    .srow:hover {
-      background: var(--compose-surface-container-high);
+      gap: 14px;
     }
 
     .srow__label {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
     }
 
     .srow__sub {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-dim);
+      font-size: 11px;
+      color: var(--stb-text-dim);
     }
 
     .srow__value {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--stb-yellow);
       flex: none;
     }
 
-    /* Contextual Help / Info Card (Right side of detail) */
     .settings-help-card {
-      border-radius: 18px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
-      padding: 22px 20px;
+      border-radius: 6px;
+      background: #0A1C30;
+      border: 1px solid var(--stb-panel-border);
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       height: fit-content;
     }
 
@@ -1604,33 +1298,112 @@
       font-size: 12px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: var(--accent);
+      letter-spacing: 1px;
+      color: var(--stb-yellow);
     }
 
     .settings-help-card__desc {
-      font-size: 14px;
-      line-height: 1.5;
-      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--stb-text-secondary);
     }
 
-    .settings-help-card__hints {
-      display: flex;
+    /* ===================== BUTTONS & CHIPS ===================== */
+    .btn {
+      display: inline-flex;
       align-items: center;
-      gap: 14px;
-      margin-top: 6px;
-      padding-top: 12px;
-      border-top: 1px solid var(--compose-outline);
+      justify-content: center;
+      gap: 6px;
+      height: 38px;
+      padding: 0 18px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFF;
+      background: #112D4C;
+      border: 1px solid var(--stb-panel-border);
+      cursor: pointer;
+      white-space: nowrap;
     }
 
-    /* ===================== MODALS & DIALOGS (Compose TV Dialog Theme) ===================== */
+    .btn--primary {
+      background: var(--stb-active-bg);
+      color: var(--stb-active-color);
+      border-color: var(--stb-active-border);
+      text-shadow: var(--stb-active-shadow);
+    }
+
+    .btn--danger {
+      background: rgba(229, 46, 45, 0.2);
+      color: #FF6B6B;
+      border-color: rgba(229, 46, 45, 0.4);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--stb-text-secondary);
+      background: #0B1C30;
+      border: 1px solid var(--stb-panel-border);
+      cursor: pointer;
+      white-space: nowrap;
+      flex: none;
+    }
+
+    .chip.is-current {
+      background: #14355A;
+      color: #FFF;
+      border-color: var(--stb-yellow);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 3px;
+      background: #17385E;
+      border: 1px solid var(--stb-panel-border);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--stb-text-secondary);
+    }
+
+    .badge--live {
+      background: var(--stb-red);
+      color: #FFF;
+      border: none;
+    }
+
+    .imdb {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #FFF;
+    }
+
+    .imdb b {
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: var(--stb-yellow);
+      color: #000;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    /* ===================== MODALS & DIALOGS ===================== */
     .menu-backdrop {
       position: fixed;
       inset: 0;
       z-index: 100;
-      background: rgba(0, 0, 0, 0.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(0, 0, 0, 0.85);
       display: none;
       align-items: center;
       justify-content: center;
@@ -1639,75 +1412,62 @@
 
     .menu-backdrop.is-open {
       display: flex;
-      animation: dialogFadeIn 200ms var(--ease);
-    }
-
-    @keyframes dialogFadeIn {
-      from { opacity: 0; transform: scale(0.97); }
-      to { opacity: 1; transform: scale(1); }
     }
 
     .menu__panel {
       width: 100%;
-      max-width: 640px;
+      max-width: 600px;
       max-height: 85vh;
-      border-radius: 24px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+      border-radius: 6px;
+      background: #091C30;
+      border: 2px solid var(--stb-panel-border);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      padding: 20px 24px;
+      padding: 16px 20px;
     }
 
     .menu__head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
-      font-size: 20px;
+      margin-bottom: 12px;
+      font-size: 18px;
       font-weight: 800;
-      color: var(--text-primary);
-    }
-
-    .menu__list {
-      overflow-y: auto;
-      scrollbar-width: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      color: #FFF;
+      border-bottom: 1px solid var(--stb-panel-border);
+      padding-bottom: 8px;
     }
 
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      gap: 12px;
     }
 
     .field-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
     }
 
     .field-group label {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
-      color: var(--text-secondary);
+      color: var(--stb-text-secondary);
     }
 
     .field-input {
-      height: 44px;
-      padding: 0 14px;
-      border-radius: 12px;
-      background: var(--compose-surface-container-high);
-      border: 1px solid var(--compose-outline);
-      color: var(--text-primary);
-      font-size: 14px;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 4px;
+      background: #061322;
+      border: 1px solid var(--stb-panel-border);
+      color: #FFF;
+      font-size: 13px;
       font-weight: 600;
       outline: none;
-      transition: border-color 160ms ease, box-shadow 160ms ease;
     }
 
     .tv-select {
@@ -1716,13 +1476,13 @@
 
     .field-select-btn {
       width: 100%;
-      height: 44px;
-      padding: 0 14px;
-      border-radius: 12px;
-      background: var(--compose-surface-container-high);
-      border: 1px solid var(--compose-outline);
-      color: var(--text-primary);
-      font-size: 14px;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 4px;
+      background: #061322;
+      border: 1px solid var(--stb-panel-border);
+      color: #FFF;
+      font-size: 13px;
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -1732,18 +1492,17 @@
 
     .tv-select-dropdown {
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 4px);
       left: 0;
       right: 0;
       z-index: 50;
-      border-radius: 12px;
-      background: var(--compose-surface-container-highest);
-      border: 1px solid var(--compose-outline);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85);
+      border-radius: 4px;
+      background: #091C30;
+      border: 1px solid var(--stb-panel-border);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
       display: none;
       flex-direction: column;
-      overflow: hidden;
-      max-height: 200px;
+      max-height: 180px;
       overflow-y: auto;
     }
 
@@ -1752,30 +1511,26 @@
     }
 
     .tv-select-opt {
-      padding: 10px 14px;
-      font-size: 14px;
+      padding: 8px 12px;
+      font-size: 13px;
       font-weight: 600;
-      color: var(--text-secondary);
+      color: var(--stb-text-secondary);
       cursor: pointer;
     }
 
-    .tv-select-opt:hover,
-    .tv-select-opt:focus,
-    .tv-select-opt.is-focused {
-      background: var(--accent);
-      color: var(--on-accent);
-    }
-
-    /* ===================== FULLSCREEN OSD PLAYER ===================== */
+    /* ===================== AUTHENTIC STALKER OSD PLAYER ===================== */
     .osd {
       position: fixed;
-      inset: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       z-index: 60;
-      background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, transparent 25%, transparent 70%, rgba(0, 0, 0, 0.92) 100%);
+      background: linear-gradient(180deg, rgba(14, 38, 66, 0.92) 0%, rgba(6, 18, 32, 0.98) 100%);
+      border-top: 3px solid var(--stb-yellow);
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.85);
       display: none;
       flex-direction: column;
-      justify-content: space-between;
-      padding: 32px 48px;
+      padding: 16px 36px 20px;
       pointer-events: auto;
     }
 
@@ -1787,68 +1542,59 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-    }
-
-    .osd__clock {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--accent);
+      margin-bottom: 8px;
     }
 
     .pv__top {
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
-      gap: 20px;
-    }
-
-    .pv__titles {
-      max-width: 70%;
+      gap: 16px;
     }
 
     .pv__sub {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 6px;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--stb-text-secondary);
+      margin-bottom: 4px;
     }
 
     .pv__title {
-      font-size: 32px;
+      font-size: 24px;
       font-weight: 800;
-      color: var(--text-primary);
+      color: #FFF;
+      text-shadow: 0 1px 3px #000;
     }
 
     .pv__icons {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .pv__btn {
-      height: 42px;
-      padding: 0 16px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid var(--compose-outline);
-      color: #fff;
-      font-size: 14px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 4px;
+      background: #112E50;
+      border: 1px solid var(--stb-panel-border);
+      color: #FFF;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
     }
 
     .pv__seekwrap {
       width: 100%;
-      margin-top: 14px;
+      margin-top: 10px;
     }
 
     .pv__slider {
       width: 100%;
       height: 6px;
-      border-radius: 3px;
-      accent-color: var(--accent);
+      accent-color: var(--stb-yellow);
       cursor: pointer;
     }
 
@@ -1856,50 +1602,93 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-top: 6px;
+      font-size: 12px;
+      color: var(--stb-text-secondary);
+      margin-top: 4px;
     }
 
-    /* TOAST */
-    .toast {
+    /* Stalker Loading Screen */
+    .stb-bootloader {
       position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(30px);
-      background: var(--compose-surface-container-highest);
-      border: 1px solid var(--focus-border);
-      color: #fff;
-      padding: 10px 22px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 700;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      inset: 0;
+      background: #040910;
       z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      transition: opacity 300ms ease;
+    }
+
+    .stb-bootloader.is-hidden {
       opacity: 0;
       pointer-events: none;
-      transition: transform 200ms var(--spring), opacity 200ms ease;
+    }
+
+    .stb-loading-bar-bg {
+      width: 320px;
+      height: 22px;
+      border: 2px solid #224872;
+      border-radius: 4px;
+      background: #02060C;
+      padding: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stb-loading-bar-fill {
+      height: 100%;
+      width: 45%;
+      background: linear-gradient(180deg, #FFC800 0%, #D48800 100%);
+      border-radius: 2px;
+      transition: width 300ms ease;
+    }
+
+    .stb-loading-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #8EABC7;
+      letter-spacing: 0.5px;
+    }
+
+    /* TOAST & Channel Overlay */
+    .toast {
+      position: fixed;
+      bottom: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0C2440;
+      border: 1px solid var(--stb-yellow);
+      color: #FFF;
+      padding: 8px 18px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease;
     }
 
     .toast.is-open {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
     }
 
     .tv-channel-overlay {
       position: fixed;
-      top: 40px;
-      right: 60px;
-      font-size: 72px;
+      top: 30px;
+      right: 40px;
+      font-size: 64px;
       font-weight: 900;
-      color: var(--accent);
-      background: rgba(0, 0, 0, 0.85);
-      border: 2px solid var(--focus-border);
-      padding: 10px 24px;
-      border-radius: 20px;
-      z-index: 300;
+      color: var(--stb-yellow);
+      background: rgba(4, 14, 26, 0.9);
+      border: 2px solid var(--stb-yellow);
+      padding: 6px 20px;
+      border-radius: 6px;
+      z-index: 350;
       display: none;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
     }
 
     .tv-channel-overlay.is-visible {
@@ -1910,29 +1699,29 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      height: 38px;
-      padding: 0 12px;
-      border-radius: 19px;
-      background: var(--compose-surface-container);
-      border: 1px solid var(--compose-outline);
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 4px;
+      background: #0C213A;
+      border: 1px solid var(--stb-panel-border);
     }
 
     .vol-pill__mute {
       background: transparent;
       border: none;
-      font-size: 16px;
+      font-size: 14px;
       cursor: pointer;
     }
 
     .vol-pill__slider {
-      width: 60px;
-      accent-color: var(--accent);
+      width: 50px;
+      accent-color: var(--stb-yellow);
     }
 
     .vol-pill__pct {
       font-size: 11px;
       font-weight: 700;
-      color: var(--text-dim);
+      color: var(--stb-text-dim);
     }
 
   </style>
@@ -1944,177 +1733,219 @@
     <video id="daisy-video" playsinline></video>
   </div>
 
-  <!-- Ambient Glow & Backdrop Scrim -->
-  <div class="ambient-glow"></div>
+  <!-- Stalker Canvas Ambient Texture -->
+  <div class="stb-canvas-bg"></div>
   <div id="bg" class="bg">
     <div id="bgImg" class="bg__img"></div>
     <div class="bg__scrim"></div>
   </div>
 
-  <!-- 2. LEFT NAVIGATION RAIL (Compose NavigationDrawer) -->
-  <aside id="rail" class="rail">
-    <!-- Brand Mark (Daisy IPTV Logo) -->
-    <div class="rail__brand focusable" tabindex="0" onclick="switchTab('home')" title="DAISY IPTV v1.0.0">
-      <img src="icon.png" alt="DAISY IPTV" class="rail__logo" />
+  <!-- 2. STALKER BOOTLOADER (Classic Loading Screen) -->
+  <div id="stb-bootloader" class="stb-bootloader">
+    <img src="stalker/logo.png" onerror="this.src='icon.png'" style="height:60px;object-fit:contain;" alt="Stalker Portal" />
+    <div class="stb-loading-bar-bg">
+      <div id="stb-loading-fill" class="stb-loading-bar-fill"></div>
+    </div>
+    <div class="stb-loading-text" id="stb-loading-status">Loading Stalker Portal...</div>
+  </div>
+
+  <!-- 3. STALKER TOP HEADER BAR -->
+  <header id="stb-header" class="stb-header">
+    <div class="stb-header__brand focusable" tabindex="0" onclick="switchTab('home')" title="STALKER PORTAL">
+      <img src="stalker/logo.png" onerror="this.src='icon.png'" class="stb-header__logo-img" alt="Stalker" />
+      <span class="stb-header__title">DAISY IPTV</span>
+      <span class="stb-header__ver">MAG250</span>
     </div>
 
-    <!-- Center Navigation Tabs -->
-    <nav class="rail__tabs">
-      <button class="rail__tab tab focusable" data-tab="search" tabindex="0" onclick="switchTab('search')" title="Search">
-        <svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 015.96 12.06l4.24 4.24a1 1 0 01-1.42 1.42l-4.24-4.24A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z"/></svg>
-        <span class="rail__dot"></span>
-      </button>
-      <button class="rail__tab tab focusable is-current" data-tab="home" tabindex="0" onclick="switchTab('home')" title="Home">
-        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-        <span class="rail__dot"></span>
-      </button>
-      <button class="rail__tab tab focusable" data-tab="live" tabindex="0" onclick="switchTab('live')" title="Live TV">
-        <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
-        <span class="rail__dot"></span>
-      </button>
-      <button class="rail__tab tab focusable" data-tab="guide" tabindex="0" onclick="switchTab('guide')" title="TV Guide">
-        <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
-        <span class="rail__dot"></span>
-      </button>
-      <button class="rail__tab tab focusable" data-tab="movies" tabindex="0" onclick="switchTab('movies')" title="Movies">
-        <svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
-        <span class="rail__dot"></span>
-      </button>
-      <button class="rail__tab tab focusable" data-tab="series" tabindex="0" onclick="switchTab('series')" title="Series">
-        <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
-        <span class="rail__dot"></span>
-      </button>
-      <button class="rail__tab tab focusable" data-tab="settings" tabindex="0" onclick="switchTab('settings')" title="Settings">
-        <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0014 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-        <span class="rail__dot"></span>
-      </button>
-    </nav>
-
-    <!-- Bottom Profile Indicator -->
-    <div class="rail__profile focusable" tabindex="0" onclick="openModal('modal-profiles')" title="Portal Profiles">
-      <span id="rail-profile-avatar">🎮</span>
+    <div class="stb-header__right">
+      <div id="hud-profile-chip" class="stb-header__portal-chip focusable" tabindex="0" onclick="openModal('modal-profiles')" title="Switch Portal">
+        <span id="hud-profile-name">STALKER PORTAL</span>
+        <span>▾</span>
+      </div>
+      <div class="stb-header__date" id="hud-date-str">Sunday, November 22</div>
+      <div id="status" class="status focusable" tabindex="0" onclick="openModal('modal-profiles')" style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <i id="status-dot" class="status__dot" style="display:inline-block;width:8px;height:8px;border-radius:4px;background:var(--stb-yellow);"></i>
+      </div>
+      <div id="clock" class="stb-header__clock">21:45</div>
     </div>
-  </aside>
-
-  <!-- 3. TOP RIGHT HUD (Status + Digital Clock) -->
-  <header id="top-hud" class="top-hud">
-    <div id="hud-profile-chip" class="hud-chip focusable" tabindex="0" onclick="openModal('modal-profiles')" title="Portal Profile">
-      <span class="hud-chip__icon">🗂️</span>
-      <span id="hud-profile-name" class="hud-chip__name">DAISY PORTAL</span>
-      <span class="hud-chip__caret">▾</span>
-    </div>
-    <div class="hud-info">
-      <span id="hud-date-str">Live</span>
-      <span class="hud-info__dot">•</span>
-      <span id="status" class="status focusable" tabindex="0" onclick="openModal('modal-profiles')" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-        <i id="status-dot" class="status__dot" style="display:inline-block;width:8px;height:8px;border-radius:4px;background:var(--accent);"></i>
-        <span style="font-size:12px;font-weight:700;">Connected</span>
-      </span>
-    </div>
-    <div id="clock" class="hud-clock">12:00</div>
   </header>
 
-  <!-- 4. BOTTOM REMOTE KEY HINTS -->
-  <div id="tv-key-hints" class="key-hints-bar">
-    <span class="key-hint"><kbd>OK</kbd> <span id="hint-ok">Watch</span></span>
-    <span class="key-hint"><kbd>◀</kbd> <span id="hint-left">Categories</span></span>
-    <span class="key-hint"><kbd>▶</kbd> <span id="hint-right">Schedule</span></span>
-    <span class="key-hint"><kbd>Hold OK</kbd> <span id="hint-hold">Options</span></span>
-    <span class="key-hint"><kbd>Back</kbd> <span id="hint-back">Menu</span></span>
-  </div>
+  <!-- 4. STALKER BOTTOM COLOR BUTTONS BAR -->
+  <footer id="stb-footer" class="stb-footer">
+    <div class="stb-color-btns">
+      <div class="stb-color-btn focusable" tabindex="0" onclick="handleColorButton('red')">
+        <span class="color-dot color-dot--red"></span>
+        <span id="hint-red">Menu</span>
+      </div>
+      <div class="stb-color-btn focusable" tabindex="0" onclick="handleColorButton('green')">
+        <span class="color-dot color-dot--green"></span>
+        <span id="hint-green">Group</span>
+      </div>
+      <div class="stb-color-btn focusable" tabindex="0" onclick="handleColorButton('yellow')">
+        <span class="color-dot color-dot--yellow"></span>
+        <span id="hint-yellow">Search</span>
+      </div>
+      <div class="stb-color-btn focusable" tabindex="0" onclick="handleColorButton('blue')">
+        <span class="color-dot color-dot--blue"></span>
+        <span id="hint-blue">Settings</span>
+      </div>
+    </div>
+
+    <div class="stb-nav-hint">
+      <span><kbd>OK</kbd> <span id="hint-ok">Select</span></span>
+      <span><kbd>Back</kbd> <span id="hint-back">Return</span></span>
+      <span style="display:none;" id="hint-left"></span>
+      <span style="display:none;" id="hint-right"></span>
+      <span style="display:none;" id="hint-hold"></span>
+    </div>
+  </footer>
 
   <!-- 5. MAIN VIEWS -->
   <main id="views" class="views">
 
-    <!-- VIEW A: HOME (Hero + Horizontal Shelves) -->
+    <!-- VIEW A: HOME (Stalker Main Menu Horizontal Carousel) -->
     <section id="v-home" class="view is-on">
-      <div class="hero" id="home-hero">
-        <div class="hero__kicker" id="hero-kicker">DAISY IPTV v1.0.0</div>
-        <h1 class="hero__title" id="hero-title">Welcome to Daisy IPTV</h1>
-        <div class="hero__meta" id="hero-meta">
-          <span class="badge">4K HDR</span>
-          <span class="imdb"><b>IMDb</b> <span id="hero-imdb">8.5</span></span>
-          <span id="hero-year">2026</span>
-          <span style="color:var(--text-dim);">•</span>
-          <span id="hero-genre">Live TV • Movies • Series</span>
+      <div class="stb-hero-banner" id="home-hero">
+        <div class="stb-hero-left">
+          <div style="font-size:12px;font-weight:800;color:var(--stb-yellow);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;" id="hero-kicker">INFOMIR STALKER PORTAL</div>
+          <h1 class="stb-hero-title" id="hero-title">Welcome to Daisy IPTV</h1>
+          <p class="stb-hero-desc" id="hero-desc">
+            Connect your authorized Stalker / Ministra MAC portal to watch Live TV channels, Video Club (Movies & Series), and TV Guide in the authentic MAG STB interface.
+          </p>
+          <div class="stb-hero-actions" id="hero-btns">
+            <button class="btn btn--primary focusable" tabindex="0" onclick="heroPrimaryAction()" id="btn-hero-play">▶ Setup Portal</button>
+            <button class="btn focusable" tabindex="0" onclick="heroSecondaryAction()" id="btn-hero-info">ⓘ Profiles</button>
+            <button class="btn focusable" tabindex="0" onclick="switchTab('settings')">⚙️ Settings</button>
+          </div>
         </div>
-        <p class="hero__desc" id="hero-desc">
-          Connect your authorized IPTV portal and MAC address to enjoy Live TV channels, VOD Movies, Series, and EPG Guide in a sleek Jetpack Compose for TV interface.
-        </p>
-        <div class="hero__btns" id="hero-btns">
-          <button class="btn btn--primary focusable" tabindex="0" onclick="heroPrimaryAction()" id="btn-hero-play">▶ Setup Portal</button>
-          <button class="btn focusable" tabindex="0" onclick="heroSecondaryAction()" id="btn-hero-info">ⓘ Profiles</button>
-          <button class="btn focusable" tabindex="0" onclick="switchTab('settings')">⚙️ Settings</button>
+        <div style="text-align:right;">
+          <img src="stalker/logo.png" onerror="this.src='icon.png'" style="height:70px;object-fit:contain;opacity:0.85;" alt="Stalker" />
         </div>
-        <div class="hero__dots" id="hero-dots"></div>
+        <!-- Hidden elements needed by JS -->
+        <div id="hero-meta" style="display:none;"><span id="hero-imdb"></span><span id="hero-year"></span><span id="hero-genre"></span></div>
+        <div id="hero-dots" style="display:none;"></div>
+      </div>
+
+      <!-- Classic Stalker Horizontal Main Menu Carousel -->
+      <div class="stb-mm-carousel">
+        <div class="stb-mm-heading">Main Menu</div>
+        <div class="stb-mm-strip" id="stb-mm-strip">
+          <div class="stb-mm-tile tab focusable is-current" data-tab="live" tabindex="0" onclick="switchTab('live')">
+            <div class="stb-mm-tile__icon">
+              <img src="stalker/i/mm_ico_tv.png" onerror="this.outerHTML='📺'" alt="TV" />
+            </div>
+            <div class="stb-mm-tile__title">TV</div>
+          </div>
+
+          <div class="stb-mm-tile tab focusable" data-tab="movies" tabindex="0" onclick="switchTab('movies')">
+            <div class="stb-mm-tile__icon">
+              <img src="stalker/i/mm_ico_video.png" onerror="this.outerHTML='🎬'" alt="Video Club" />
+            </div>
+            <div class="stb-mm-tile__title">Video Club</div>
+          </div>
+
+          <div class="stb-mm-tile tab focusable" data-tab="series" tabindex="0" onclick="switchTab('series')">
+            <div class="stb-mm-tile__icon">
+              <img src="stalker/i/mm_ico_mb.png" onerror="this.outerHTML='📺'" alt="Series" />
+            </div>
+            <div class="stb-mm-tile__title">Series</div>
+          </div>
+
+          <div class="stb-mm-tile tab focusable" data-tab="guide" tabindex="0" onclick="switchTab('guide')">
+            <div class="stb-mm-tile__icon">
+              <img src="stalker/i/mm_ico_dm.png" onerror="this.outerHTML='📅'" alt="TV Guide" />
+            </div>
+            <div class="stb-mm-tile__title">TV Guide</div>
+          </div>
+
+          <div class="stb-mm-tile tab focusable" data-tab="search" tabindex="0" onclick="switchTab('search')">
+            <div class="stb-mm-tile__icon">🔍</div>
+            <div class="stb-mm-tile__title">Search</div>
+          </div>
+
+          <div class="stb-mm-tile tab focusable" data-tab="settings" tabindex="0" onclick="switchTab('settings')">
+            <div class="stb-mm-tile__icon">
+              <img src="stalker/i/mm_ico_setting.png" onerror="this.outerHTML='⚙️'" alt="Settings" />
+            </div>
+            <div class="stb-mm-tile__title">Settings</div>
+          </div>
+        </div>
       </div>
       <div class="rows" id="home-rows"></div>
     </section>
 
-    <!-- VIEW B: LIVE TV (Split-Screen matching LiveTV_with_PreviewON.png) -->
+    <!-- VIEW B: LIVE TV (Classic Stalker 3-Panel Split) -->
     <section id="v-live" class="view">
-      <!-- Left Column: Channel list & category filters -->
-      <div class="lv__left-col">
-        <div class="lv__header-top">
-          <span class="lv__heading">Live TV</span>
-          <span class="lv__channel-count" id="lv-header-count">Loading channels...</span>
+      <!-- Left Panel: Categories List -->
+      <div class="stb-cat-col">
+        <div class="stb-panel-head">
+          <span>Categories</span>
+          <span style="font-size:11px;color:var(--stb-yellow);" id="lv-genre-count">0</span>
         </div>
-        <div class="lv__search-box" style="display:flex;gap:8px;">
-          <button class="chip focusable" onclick="openGenrePicker('tv')" style="flex:1;">≡ Filter Genres (<span id="lv-genre-count">0</span>)</button>
-          <button class="chip focusable" onclick="switchTab('guide')">⊞ Guide View</button>
+        <div class="stb-cat-list" id="lv-chipstrip">
+          <!-- Category rows populated dynamically -->
         </div>
-        <!-- Category Chips Strip -->
-        <div class="lv__chipstrip" id="lv-chipstrip"></div>
-        <!-- Vertical Channel Card Stack -->
-        <div class="lv__cardstrip" id="lv-cardstrip"></div>
       </div>
 
-      <!-- Right Column: Live Preview Box & Program Info -->
-      <div class="lv__right-col">
-        <div class="lv__preview-window" id="lv-preview-box" onclick="enterFullscreenPlayer()" title="Click to enter fullscreen player">
-          <div class="lv__preview-badge-live">
+      <!-- Center Panel: Channels List -->
+      <div class="stb-ch-col">
+        <div class="stb-panel-head">
+          <span id="stb-current-cat-name">All Channels</span>
+          <span style="font-size:11px;color:var(--stb-yellow);" id="lv-header-count">Channels</span>
+        </div>
+        <div class="stb-ch-list" id="lv-cardstrip">
+          <!-- Channel rows (.lcard) populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Right Panel: Live Preview Window & Detailed EPG -->
+      <div class="stb-preview-col">
+        <!-- 16:9 Video Preview Box -->
+        <div class="stb-preview-box" id="lv-preview-box" onclick="enterFullscreenPlayer()" title="Click to Watch Fullscreen">
+          <div class="stb-preview-badge-live">
             <span class="live-dot"></span>
             <span>LIVE</span>
           </div>
-          <div class="lv__preview-badge-res" id="lv-stream-info">1080p 25 FPS</div>
-          <div class="lv__preview-footer">
+          <div class="stb-preview-badge-res" id="lv-stream-info">1080p 25 FPS</div>
+          <div class="stb-preview-footer">
             <span class="badge" id="lv-chnum">#1</span>
-            <span class="lv__chname" id="lv-chname">Select a Channel</span>
+            <span style="font-size:14px;font-weight:700;color:#FFF;" id="lv-chname">Select a Channel</span>
             <span id="lv-preview-chname" style="display:none;"></span>
-            <span id="lv-favstar" style="color:var(--star-gold);font-size:18px;cursor:pointer;margin-left:auto;" onclick="event.stopPropagation();toggleActiveChannelFav()">☆</span>
+            <span id="lv-favstar" style="color:var(--stb-yellow);font-size:16px;cursor:pointer;margin-left:auto;" onclick="event.stopPropagation();toggleActiveChannelFav()">☆</span>
           </div>
         </div>
 
-        <div class="lv__hero">
-          <div class="lv__title" id="lv-prog-title">Live Broadcast</div>
-          <div class="lv__meta">
+        <!-- Detailed EPG Panel -->
+        <div class="stb-epg-panel">
+          <div class="stb-epg-title" id="lv-prog-title">Live Broadcast</div>
+          <div class="stb-epg-time-row">
             <span id="lv-prog-time">Now Playing</span>
-            <div class="bar"><i style="width:45%"></i></div>
+            <div class="stb-epg-bar"><i style="width:45%"></i></div>
           </div>
-          <div class="lv__desc" id="lv-prog-desc">
-            Choose any category chip or channel card on the left to stream immediately in this preview window.
+          <div class="stb-epg-desc" id="lv-prog-desc">
+            Choose any channel from the list to stream immediately in this preview window.
           </div>
-          <div class="lv__actions">
-            <button class="btn btn--primary focusable" tabindex="0" onclick="enterFullscreenPlayer()" id="btn-lv-play">⛶ Fullscreen Player</button>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+            <button class="btn btn--primary focusable" tabindex="0" onclick="enterFullscreenPlayer()" id="btn-lv-play">⛶ Fullscreen</button>
             <button class="btn focusable" tabindex="0" onclick="toggleActiveChannelFav()">★ Favorite</button>
             <div class="vol-pill">
-              <button class="vol-pill__mute focusable" id="btn-lv-mute" onclick="toggleMute()" title="Mute / Unmute">🔊</button>
+              <button class="vol-pill__mute focusable" id="btn-lv-mute" onclick="toggleMute()" title="Mute">🔊</button>
               <input type="range" id="lv-vol-slider" class="vol-pill__slider focusable" min="0" max="100" step="1" value="100" oninput="setVolumePercent(this.value)" title="Volume" />
               <span class="vol-pill__pct" id="lv-vol-pct">100%</span>
             </div>
           </div>
-          <!-- Up Next Schedule -->
-          <div style="font-size:13px;font-weight:700;color:var(--text-dim);margin-top:14px;text-transform:uppercase;letter-spacing:1px;">Upcoming Schedule</div>
-          <div class="lv__next" id="lv-nextstrip"></div>
+
+          <div style="font-size:11px;font-weight:800;color:var(--stb-text-dim);text-transform:uppercase;letter-spacing:1px;margin-top:6px;">Upcoming Shows</div>
+          <div class="stb-upcoming-list" id="lv-nextstrip"></div>
         </div>
       </div>
     </section>
 
-    <!-- VIEW C: GUIDE / EPG (EPG_loaded.png) -->
+    <!-- VIEW C: GUIDE / EPG -->
     <section id="v-guide" class="view">
       <div class="guide__top">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
-          <button class="chip focusable" onclick="openGenrePicker('tv')">☰ <span id="guide-cat-label">All Channels</span></button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+          <button class="chip focusable" onclick="openGenrePicker('tv')">📁 <span id="guide-cat-label">All Channels</span></button>
           <select id="epg-offset-select" class="chip focusable" onchange="renderGuideView()">
             <option value="-120">OFFSET -02:00</option>
             <option value="-60">OFFSET -01:00</option>
@@ -2122,16 +1953,16 @@
             <option value="60">OFFSET +01:00</option>
             <option value="120">OFFSET +02:00</option>
           </select>
-          <button class="chip focusable" onclick="switchTab('live')">📺 Back to Live TV</button>
+          <button class="chip focusable" onclick="switchTab('live')">📺 Back to TV</button>
         </div>
-        <div class="guide__title" id="guide-prog-title">Live TV Guide</div>
+        <div class="guide__title" id="guide-prog-title">TV Guide</div>
         <div class="guide__meta">
           <span class="badge" id="guide-ch-num">1</span>
-          <span id="guide-ch-name">Select a channel from the grid</span>
+          <span id="guide-ch-name">Select a channel from the schedule</span>
           <span class="badge badge--live">LIVE</span>
           <span id="guide-time-slot">Live Schedule</span>
         </div>
-        <div id="guide-prog-desc" style="font-size:14px;color:var(--text-secondary);margin-top:4px;">Click any channel row in the guide below to tune in while browsing the schedule.</div>
+        <div id="guide-prog-desc" style="font-size:12px;color:var(--stb-text-secondary);margin-top:2px;">Click any program to tune in while browsing the schedule.</div>
       </div>
       <div class="guide__grid">
         <div class="guide__now"></div>
@@ -2140,11 +1971,11 @@
       </div>
     </section>
 
-    <!-- VIEW D: MOVIES (Movies.png) -->
+    <!-- VIEW D: MOVIES (Video Club) -->
     <section id="v-movies" class="view">
       <div class="vod-header">
         <div class="vod__chipstrip" id="movies-chipstrip">
-          <button class="chip focusable" onclick="openGenrePicker('vod')">🗂️ Genres (<span id="vod-cat-total">0</span>)</button>
+          <button class="chip focusable" onclick="openGenrePicker('vod')">📁 Genres (<span id="vod-cat-total">0</span>)</button>
           <button class="chip focusable" onclick="cycleVodSort()" id="btn-vod-sort">⇅ Sort: Added</button>
           <button class="chip focusable" onclick="loadVodPage(1, true)">New</button>
           <button class="chip focusable" onclick="toggleVodFavFilter()" id="btn-vod-fav">★ My List</button>
@@ -2159,7 +1990,7 @@
     <section id="v-series" class="view">
       <div class="vod-header">
         <div class="vod__chipstrip" id="series-chipstrip">
-          <button class="chip focusable" onclick="openGenrePicker('series')">🗂️ Genres (<span id="series-cat-total">0</span>)</button>
+          <button class="chip focusable" onclick="openGenrePicker('series')">📁 Genres (<span id="series-cat-total">0</span>)</button>
           <button class="chip focusable" onclick="loadSeriesPage(1, true)">New</button>
           <button class="chip focusable" onclick="loadSeriesPage(state.seriesPage + 1, false)">＋ Load More</button>
         </div>
@@ -2172,170 +2003,120 @@
     <section id="v-search" class="view">
       <div class="search-wrap">
         <div class="search__field">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--text-secondary)">
-            <path d="M10.5 3a7.5 7.5 0 015.96 12.06l4.24 4.24a1 1 0 01-1.42 1.42l-4.24-4.24A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z" />
-          </svg>
+          <span style="font-size:20px;">🔍</span>
           <input type="text" id="global-search-input" class="search__input focusable"
-            placeholder="Search Live TV channels, movies, and series..." oninput="runGlobalSearch(this.value)" />
+            placeholder="Search TV channels, movies, and series..." oninput="runGlobalSearch(this.value)" />
           <button class="chip" onclick="document.getElementById('global-search-input').value='';runGlobalSearch('')">Clear</button>
         </div>
         <div id="search-results-rows"></div>
       </div>
     </section>
 
-    <!-- VIEW G: SETTINGS (Two-Pane Compose TV matching Settings_Main.png) -->
+    <!-- VIEW G: SETTINGS (Stalker System Settings) -->
     <section id="v-settings" class="view">
       <div class="settings-container">
-        <!-- Left Sidebar Pane -->
+        <!-- Left Sidebar Navigation -->
         <div class="settings-nav">
           <div class="settings-profile-card">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div class="settings-profile-card__avatar">🎮</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="settings-profile-card__avatar">⚙️</div>
               <div>
-                <div style="font-size:14px;font-weight:700;color:var(--text-primary);" id="set-profile-name-badge">DAISY USER</div>
-                <div style="font-size:11px;color:var(--text-dim);" id="set-profile-count">1 Profile</div>
+                <div style="font-size:13px;font-weight:700;color:#FFF;" id="set-profile-name-badge">STALKER USER</div>
+                <div style="font-size:11px;color:var(--stb-text-dim);" id="set-profile-count">1 Profile</div>
               </div>
             </div>
-            <button class="btn focusable" style="height:32px;padding:0 12px;font-size:12px;border-radius:10px;" onclick="openModal('modal-profiles')">Switch</button>
+            <button class="btn focusable" style="height:28px;padding:0 10px;font-size:11px;" onclick="openModal('modal-profiles')">Switch</button>
           </div>
 
-          <div class="settings-nav-section-title">Settings</div>
+          <div class="settings-nav-section-title">Settings Categories</div>
           <div class="settings-nav-item is-selected focusable" tabindex="0" onclick="showSettingsCategory('all')">
             <span>⚙️ All Settings</span>
-            <span class="settings-nav-item__badge">12</span>
+            <span style="font-size:11px;color:var(--stb-text-dim);">12</span>
           </div>
 
-          <div class="settings-nav-section-title">Your Things</div>
+          <div class="settings-nav-section-title">Shortcuts</div>
           <div class="settings-nav-item focusable" tabindex="0" onclick="showFavoritesList()">
             <span>★ Favorites</span>
-            <span class="settings-nav-item__badge" id="set-fav-badge">0</span>
+            <span style="font-size:11px;color:var(--stb-text-dim);" id="set-fav-badge">0</span>
           </div>
-          <div class="settings-nav-item focusable" tabindex="0" onclick="switchTab('live')">
-            <span>🕒 History</span>
-            <span class="settings-nav-item__badge">Active</span>
-          </div>
-
-          <div class="settings-nav-section-title">Keep It Safe</div>
           <div class="settings-nav-item focusable" tabindex="0" onclick="openModal('modal-backup')">
             <span>☁️ Backup & Restore</span>
-            <span class="settings-nav-item__badge">Sync</span>
+            <span style="font-size:11px;color:var(--stb-text-dim);">Code</span>
           </div>
-
-          <div class="settings-nav-section-title">App</div>
           <div class="settings-nav-item focusable" tabindex="0" onclick="resetPortalCache()">
-            <span>🔄 Refresh Cache</span>
-            <span class="settings-nav-item__badge">Reset</span>
+            <span>🔄 Reload Portal</span>
+            <span style="font-size:11px;color:var(--stb-text-dim);">Reset</span>
           </div>
           <div class="settings-nav-item focusable" tabindex="0" onclick="openModal('modal-about')">
-            <span>🌼 About Daisy IPTV</span>
-            <span class="settings-nav-item__badge">v1.0.0</span>
+            <span>ℹ️ About Stalker</span>
+            <span style="font-size:11px;color:var(--stb-text-dim);">v1.0</span>
           </div>
         </div>
 
-        <!-- Right Main Content: 12 Category Cards or Category Detail Rows -->
+        <!-- Right Main Settings Content -->
         <div class="settings-main" id="settings-main-pane">
-          <div class="settings-main-heading" id="settings-main-title">Settings</div>
-          
-          <!-- 3-Column Grid of 12 Compose TV Settings Cards -->
+          <div class="settings-main-heading" id="settings-main-title">System Settings</div>
+
+          <!-- 3-Column Grid of Settings Category Cards -->
           <div class="settings-grid-3col" id="settings-category-grid">
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('portals')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">👤</span>
-                <span class="pref-card__count">4</span>
-              </div>
-              <div class="pref-card__title">Profile & Portals</div>
-              <div class="pref-card__desc">Manage IPTV portals, MAC address, STB type, and proxy backend.</div>
+              <div class="pref-card__title">👤 Portals & MAC</div>
+              <div class="pref-card__desc">Portal host URL, MAC address, MAG STB model, and proxy backend.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('player')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">📺</span>
-                <span class="pref-card__count">3</span>
-              </div>
-              <div class="pref-card__title">Player & Streaming</div>
-              <div class="pref-card__desc">Live TV player engine (Auto/Direct/Native/FFmpeg), VOD player.</div>
+              <div class="pref-card__title">📺 Playback Engine</div>
+              <div class="pref-card__desc">Live TV player (Auto/Direct/Native/FFmpeg), VOD player.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('picture')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">📐</span>
-                <span class="pref-card__count">3</span>
-              </div>
-              <div class="pref-card__title">Picture & Scaling</div>
-              <div class="pref-card__desc">Aspect ratio, zoom mode, speed rate, and Picture-in-Picture.</div>
+              <div class="pref-card__title">📐 Video & Display</div>
+              <div class="pref-card__desc">Aspect ratio (Fit, Stretch, Zoom, Auto), speed, and PIP.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('buffer')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">⚡</span>
-                <span class="pref-card__count">2</span>
-              </div>
-              <div class="pref-card__title">Buffer & Cache</div>
-              <div class="pref-card__desc">Network buffer caching, jitter compensation, refresh playlists.</div>
+              <div class="pref-card__title">⚡ Buffer & Network</div>
+              <div class="pref-card__desc">Buffer caching (1s to 10s) and cache reset.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('audio')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">🌐</span>
-                <span class="pref-card__count">2</span>
-              </div>
-              <div class="pref-card__title">Sound & Subtitles</div>
-              <div class="pref-card__desc">Preferred audio languages and embedded subtitle tracks.</div>
+              <div class="pref-card__title">🌐 Audio & Subtitles</div>
+              <div class="pref-card__desc">Audio track languages and embedded subtitles.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('catalog')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">🗂️</span>
-                <span class="pref-card__count">3</span>
-              </div>
-              <div class="pref-card__title">Catalog & Categories</div>
-              <div class="pref-card__desc">Filter/hide genres, sort order, and custom channel ordering.</div>
+              <div class="pref-card__title">📁 Categories & Sort</div>
+              <div class="pref-card__desc">Hide unwanted genres, channel sorting, and reordering.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('playback')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">▶️</span>
-                <span class="pref-card__count">2</span>
-              </div>
-              <div class="pref-card__title">Playback Preferences</div>
-              <div class="pref-card__desc">Auto-play last channel on launch, resume playback.</div>
+              <div class="pref-card__title">▶️ Auto-Play</div>
+              <div class="pref-card__desc">Auto-play last channel on startup.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('appearance')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">🎨</span>
-                <span class="pref-card__count">2</span>
-              </div>
-              <div class="pref-card__title">Appearance & Theme</div>
-              <div class="pref-card__desc">Deep OLED Dark mode, portal theme color accents.</div>
+              <div class="pref-card__title">🎨 Theme & Interface</div>
+              <div class="pref-card__desc">Stalker portal skin, dark theme mode.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('backup')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">☁️</span>
-                <span class="pref-card__count">2</span>
-              </div>
-              <div class="pref-card__title">Backup & Restore</div>
-              <div class="pref-card__desc">Cross-device restoration code and online cloud sync.</div>
+              <div class="pref-card__title">☁️ Backup & Sync</div>
+              <div class="pref-card__desc">Cross-device restoration code and cloud sync.</div>
             </div>
 
             <div class="pref-card focusable" tabindex="0" onclick="showSettingsCategory('about')">
-              <div class="pref-card__top">
-                <span class="pref-card__icon">🌼</span>
-                <span class="pref-card__count">2</span>
-              </div>
-              <div class="pref-card__title">About & Diagnostics</div>
-              <div class="pref-card__desc">Daisy IPTV v1.0.0, Tizen runtime, and hardware specs.</div>
+              <div class="pref-card__title">🌼 About Stalker</div>
+              <div class="pref-card__desc">Daisy IPTV v1.0.0 running Stalker Middleware.</div>
             </div>
           </div>
 
-          <!-- Detailed Settings Category View (shows srows matching category) -->
+          <!-- Detailed Settings Category Rows List -->
           <div id="settings-detail-container" style="display:none;" class="settings-detail-pane">
             <div class="settings-rows-list" id="settings-rows-target">
               
-              <!-- Category: Portals & Profiles -->
+              <!-- Portals & Profiles -->
               <div class="srow focusable" data-cat="portals" tabindex="0" onclick="openModal('modal-profiles')"
-                onmouseenter="setSettingsHero('👤','Portal Profiles','Switch between saved IPTV portals, edit MAC/STB parameters, duplicate, or delete single profiles.')">
+                onmouseenter="setSettingsHero('👤','Portal Profiles','Manage saved Stalker portals and edit MAC parameters.')">
                 <div class="srow__label">
                   <span>Manage Portal Profiles</span>
                   <span class="srow__sub" id="set-active-profile-sub">No Portal Configured</span>
@@ -2344,16 +2125,16 @@
               </div>
 
               <div class="srow focusable" data-cat="portals" tabindex="0" onclick="openNewProfileModal()"
-                onmouseenter="setSettingsHero('➕','Add a Portal','Connect a Stalker / Ministra MAC portal with optional Serial, Device ID 1/2, Signature, and Hardware Version.')">
+                onmouseenter="setSettingsHero('➕','Add Portal','Add a new Stalker portal URL and MAC address.')">
                 <div class="srow__label">
                   <span>Add / Setup New MAC Portal</span>
-                  <span class="srow__sub">Configure Host URL, MAC address, and MAG STB model</span>
+                  <span class="srow__sub">Configure Host URL, MAC address, and MAG STB type</span>
                 </div>
                 <div class="srow__value">Add ›</div>
               </div>
 
               <div class="srow focusable" data-cat="portals" tabindex="0" onclick="promptBackendUrl()"
-                onmouseenter="setSettingsHero('🌐','API & Stream Proxy Backend','Configure proxy backend URL for Smart TV widget mode (default: https://daisy-iptv-player.vercel.app).')">
+                onmouseenter="setSettingsHero('🌐','Stream Proxy Backend','Configure proxy backend URL for Smart TV widget mode.')">
                 <div class="srow__label">
                   <span>API & Stream Proxy Backend</span>
                   <span class="srow__sub" id="set-proxy-backend-sub">https://daisy-iptv-player.vercel.app</span>
@@ -2362,112 +2143,112 @@
               </div>
 
               <div class="srow focusable" data-cat="portals" tabindex="0" onclick="toggleBoolSetting('forceLogin')"
-                onmouseenter="setSettingsHero('🔐','Force Login on Profile Switch','Perform a fresh portal handshake whenever switching profiles.')">
+                onmouseenter="setSettingsHero('🔐','Force Login','Perform fresh portal handshake on switch.')">
                 <div class="srow__label"><span>Force Login (Profile Switch)</span></div>
                 <div class="srow__value" id="val-forceLogin">On</div>
               </div>
 
-              <!-- Category: Player & Streaming -->
+              <!-- Player Engine -->
               <div class="srow focusable" data-cat="player" tabindex="0" onclick="cycleSetting('tvPlayer',['Auto','Direct','Native','FFmpeg'])"
-                onmouseenter="setSettingsHero('📺','Live TV Player','Select the decoding engine for Live MPEG-TS streams: Auto, Direct (TV direct connection), Native, or FFmpeg.')">
+                onmouseenter="setSettingsHero('📺','Live TV Player','Select decoding engine for Live MPEG-TS streams.')">
                 <div class="srow__label"><span>Live TV: Player</span></div>
                 <div class="srow__value" id="val-tvPlayer">Auto</div>
               </div>
 
               <div class="srow focusable" data-cat="player" tabindex="0" onclick="cycleSetting('vodPlayer',['Auto','FFmpeg','Native'])"
-                onmouseenter="setSettingsHero('🎬','VOD / Series Player','Select the playback engine for MKV and MP4 Movies and Series.')">
+                onmouseenter="setSettingsHero('🎬','VOD Player','Select playback engine for Movies and Series.')">
                 <div class="srow__label"><span>Vod/Shows: Player</span></div>
                 <div class="srow__value" id="val-vodPlayer">Auto</div>
               </div>
 
-              <!-- Category: Picture & Scaling -->
+              <!-- Picture & Video -->
               <div class="srow focusable" data-cat="picture" tabindex="0" onclick="cycleAspectRatio()"
-                onmouseenter="setSettingsHero('📐','Aspect Ratio','Adjust how channels, movies, and series scale to fill your screen.')">
+                onmouseenter="setSettingsHero('📐','Aspect Ratio','Adjust how channels scale (Fit, Stretch, Zoom).')">
                 <div class="srow__label"><span>Aspect Ratio</span></div>
                 <div class="srow__value" id="val-aspectRatio">Auto</div>
               </div>
 
               <div class="srow focusable" data-cat="picture" tabindex="0" onclick="cycleSetting('speed',[0.75,1.0,1.25,1.5,2.0])"
-                onmouseenter="setSettingsHero('⏩','Playback Speed','Adjust VOD and stream playback speed.')">
+                onmouseenter="setSettingsHero('⏩','Speed','Adjust playback speed rate.')">
                 <div class="srow__label"><span>Playback Speed</span></div>
                 <div class="srow__value" id="val-speed">1.0x</div>
               </div>
 
               <div class="srow focusable" data-cat="picture" tabindex="0" onclick="toggleBoolSetting('pip')"
-                onmouseenter="setSettingsHero('🖼️','Picture in Picture (PIP)','Allow floating Picture-in-Picture video window.')">
+                onmouseenter="setSettingsHero('🖼️','PIP','Allow Picture in Picture video window.')">
                 <div class="srow__label"><span>Picture in picture (PIP)</span></div>
                 <div class="srow__value" id="val-pip">On</div>
               </div>
 
-              <!-- Category: Buffer & Cache -->
+              <!-- Buffer & Cache -->
               <div class="srow focusable" data-cat="buffer" tabindex="0" onclick="cycleSetting('bufferSizeMs',[1000,2000,3000,5000,10000])"
-                onmouseenter="setSettingsHero('⚡','Buffer / Network Caching','Default 3,000 ms. Increase if live streams stutter over Wi-Fi.')">
+                onmouseenter="setSettingsHero('⚡','Buffer Caching','Buffer caching for Wi-Fi jitter.')">
                 <div class="srow__label"><span>Buffer / Network Caching</span></div>
                 <div class="srow__value" id="val-bufferSizeMs">3,000 ms</div>
               </div>
 
               <div class="srow focusable" data-cat="buffer" tabindex="0" onclick="resetPortalCache()"
-                onmouseenter="setSettingsHero('🔄','Refresh & Reset Cache','Clear cached categories and perform a fresh portal handshake.')">
+                onmouseenter="setSettingsHero('🔄','Refresh Cache','Clear cached channels and perform handshake.')">
                 <div class="srow__label"><span>Refresh All Playlists / Reset Cache</span></div>
                 <div class="srow__value">Refresh ›</div>
               </div>
 
-              <!-- Category: Sound & Subtitles -->
+              <!-- Audio & Subtitles -->
               <div class="srow focusable" data-cat="audio" tabindex="0"
                 onclick="cycleSetting('language',['english','swedish','dutch','arabic','spanish','french','german'])"
-                onmouseenter="setSettingsHero('🌐','Audio & Subtitle Language','Preferred audio and subtitle track language.')">
+                onmouseenter="setSettingsHero('🌐','Language','Preferred audio and subtitle language.')">
                 <div class="srow__label"><span>Audio & Subtitle Language</span></div>
                 <div class="srow__value" id="val-language">english</div>
               </div>
 
               <div class="srow focusable" data-cat="audio" tabindex="0" onclick="toggleBoolSetting('subtitles')"
-                onmouseenter="setSettingsHero('💬','Show Subtitles','Enable embedded subtitles when available.')">
+                onmouseenter="setSettingsHero('💬','Subtitles','Enable embedded subtitles.')">
                 <div class="srow__label"><span>Show Subtitles</span></div>
                 <div class="srow__value" id="val-subtitles">On</div>
               </div>
 
-              <!-- Category: Catalog & Categories -->
+              <!-- Catalog & Categories -->
               <div class="srow focusable" data-cat="catalog" tabindex="0" onclick="openModal('modal-filter')"
-                onmouseenter="setSettingsHero('🗂️','Filter / Hide Genres','Hide categories you never watch so your Live TV list stays clean.')">
+                onmouseenter="setSettingsHero('📁','Filter Categories','Hide categories you never watch.')">
                 <div class="srow__label"><span>Filter / Hide Categories</span></div>
                 <div class="srow__value">Configure ›</div>
               </div>
 
               <div class="srow focusable" data-cat="catalog" tabindex="0" onclick="openModal('modal-reorder')"
-                onmouseenter="setSettingsHero('↕️','Reorder Channels','Move your favorite channels to the top or customize their order.')">
+                onmouseenter="setSettingsHero('↕️','Reorder Channels','Move favorite channels to the top.')">
                 <div class="srow__label"><span>Reorder Channels (Move To Top)</span></div>
                 <div class="srow__value">Edit ›</div>
               </div>
 
               <div class="srow focusable" data-cat="catalog" tabindex="0" onclick="cycleSetting('sortBy',['number','name','added'])"
-                onmouseenter="setSettingsHero('⇅','Sort Order','Default sort order for channels and VOD lists.')">
+                onmouseenter="setSettingsHero('⇅','Sort Order','Default channel and VOD sort order.')">
                 <div class="srow__label"><span>Sort by</span></div>
                 <div class="srow__value" id="val-sortBy">number</div>
               </div>
 
-              <!-- Category: Playback Preferences -->
+              <!-- Playback Preferences -->
               <div class="srow focusable" data-cat="playback" tabindex="0" onclick="toggleBoolSetting('autoPlayLastChannel')"
-                onmouseenter="setSettingsHero('▶️','Auto Play Last Channel','Automatically start the last watched channel when opening Live TV.')">
+                onmouseenter="setSettingsHero('▶️','Auto Play','Automatically start the last watched channel.')">
                 <div class="srow__label"><span>Auto play last channel</span></div>
                 <div class="srow__value" id="val-autoPlayLastChannel">On</div>
               </div>
 
-              <!-- Category: Appearance & Theme -->
+              <!-- Appearance & Theme -->
               <div class="srow focusable" data-cat="appearance" tabindex="0" onclick="toggleBoolSetting('darkMode')"
-                onmouseenter="setSettingsHero('🌙','Dark Mode','Use deep OLED dark backdrop.')">
+                onmouseenter="setSettingsHero('🌙','Dark Mode','Use dark backdrop.')">
                 <div class="srow__label"><span>Dark Mode</span></div>
                 <div class="srow__value" id="val-darkMode">On</div>
               </div>
 
               <div class="srow focusable" data-cat="appearance" tabindex="0" onclick="toggleBoolSetting('portalTheme')"
-                onmouseenter="setSettingsHero('🎨','Load Actual Portal Theme','Switch between dark emerald and violet portal theme.')">
+                onmouseenter="setSettingsHero('🎨','Portal Theme','Toggle portal theme accent.')">
                 <div class="srow__label"><span>Load Actual Portal Theme</span></div>
                 <div class="srow__value" id="val-portalTheme">Off</div>
               </div>
 
-              <!-- Category: Backup & Restore -->
+              <!-- Backup & Restore -->
               <div class="srow focusable" data-cat="backup" tabindex="0" onclick="openModal('modal-backup')"
-                onmouseenter="setSettingsHero('☁️','Backup & Restore Code','Generate a DAISY-... restoration code to transfer all profiles, favorites, and settings to your TV, phone, or tablet.')">
+                onmouseenter="setSettingsHero('☁️','Restoration Code','Generate a restoration code for your TV.')">
                 <div class="srow__label">
                   <span>Backup & Restore Settings</span>
                   <span class="srow__sub">Cross-device sync via Restoration Code</span>
@@ -2476,28 +2257,25 @@
               </div>
 
               <div class="srow focusable" data-cat="backup" tabindex="0" onclick="toggleBoolSetting('onlineBackup')"
-                onmouseenter="setSettingsHero('☁️','Online Mode (Backup)','Keep profiles ready for cloud restoration codes.')">
+                onmouseenter="setSettingsHero('☁️','Online Mode','Keep profiles ready for cloud restore.')">
                 <div class="srow__label"><span>Online mode (Backup)</span></div>
                 <div class="srow__value" id="val-onlineBackup">On</div>
               </div>
 
-              <!-- Category: About -->
+              <!-- About -->
               <div class="srow focusable" data-cat="about" tabindex="0" onclick="openModal('modal-about')"
-                onmouseenter="setSettingsHero('🌼','Daisy IPTV v1.0.0','Universal IPTV player for Samsung Smart TV, Web, Android TV, Mobile, iOS, and Apple TV.')">
-                <div class="srow__label"><span>Daisy IPTV</span></div>
+                onmouseenter="setSettingsHero('🌼','About Stalker','Original Stalker Portal for Samsung TV.')">
+                <div class="srow__label"><span>Daisy IPTV (Stalker Middleware)</span></div>
                 <div class="srow__value">Version 1.0.0 ›</div>
               </div>
 
             </div>
 
-            <!-- Contextual Info Card -->
+            <!-- Contextual Help Card -->
             <div class="settings-help-card">
               <div class="settings-help-card__title" id="settings-hero-title">Settings Help</div>
-              <div class="settings-help-card__desc" id="settings-hero-desc">Select any option on the left to customize your player experience.</div>
-              <div class="settings-help-card__hints">
-                <span class="key-hint"><kbd>OK</kbd> Select</span>
-                <span class="key-hint"><kbd>Back</kbd> Categories</span>
-              </div>
+              <div class="settings-help-card__desc" id="settings-hero-desc">Select any option on the left to configure your Stalker portal parameters.</div>
+              <div style="font-size:12px;color:var(--stb-yellow);font-weight:700;margin-top:8px;">[OK] Select • [Back] Return</div>
               <div id="settings-hero-icon" style="display:none;">⚙️</div>
             </div>
           </div>
@@ -2507,41 +2285,37 @@
   </main>
 
   <!-- 6. DETAIL OVERLAY -->
-  <section id="detail" class="detail" style="display:none;position:fixed;inset:0;z-index:70;background:rgba(5,8,10,0.95);overflow-y:auto;padding:48px;">
+  <section id="detail" class="detail" style="display:none;position:fixed;inset:0;z-index:70;background:rgba(4,12,22,0.95);overflow-y:auto;padding:36px;">
     <div id="detail-bg" class="detail__bg"></div>
     <div class="detail__content" id="detail-content"></div>
   </section>
 
-  <!-- 7. FULLSCREEN OSD PLAYER -->
+  <!-- 7. AUTHENTIC STALKER FULLSCREEN OSD PLAYER -->
   <section id="osd" class="osd" onmousemove="wakeOsd()" onclick="wakeOsd()">
     <div class="osd__top">
-      <button class="pv__btn focusable" onclick="exitFullscreenPlayer()">← Back to Browse</button>
-      <div class="osd__clock" id="osd-clock">12:00</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="badge badge--live" id="osd-badge">LIVE</span>
+        <span style="font-size:13px;font-weight:700;color:var(--stb-yellow);" id="osd-sub">MPEG-TS Hardware Decoder</span>
+      </div>
+      <div style="font-size:18px;font-weight:800;color:#FFF;font-family:monospace;" id="osd-clock">21:45</div>
     </div>
 
     <div class="pv__top">
-      <div class="pv__titles">
-        <div class="pv__sub">
-          <span class="badge" id="osd-badge">LIVE</span>
-          <span id="osd-sub">Daisy IPTV • Hardware Decoding</span>
-        </div>
+      <div>
         <div class="pv__title" id="osd-title">Select a channel or movie</div>
       </div>
 
       <div class="pv__icons">
-        <button class="pv__btn vod-only focusable" onclick="seekRelative(-30)" title="Rewind 30s">⏪ -30s</button>
-        <button class="pv__btn vod-only focusable" onclick="seekRelative(-15)" title="Rewind 15s">⏪ -15s</button>
+        <button class="pv__btn vod-only focusable" onclick="seekRelative(-30)">⏪ -30s</button>
         <button class="pv__btn vod-only focusable" onclick="togglePlayPause()" id="btn-osd-play">⏸ Pause</button>
-        <button class="pv__btn vod-only focusable" onclick="seekRelative(15)" title="Forward 15s">⏩ +15s</button>
-        <button class="pv__btn vod-only focusable" onclick="seekRelative(60)" title="Forward 60s">⏩ +1m</button>
-        <button class="pv__btn focusable" onclick="cycleAspectRatio()" id="btn-osd-aspect">📐 Auto</button>
-        <button class="pv__btn focusable" onclick="togglePip()" title="Picture in Picture">🖼️ PIP</button>
+        <button class="pv__btn vod-only focusable" onclick="seekRelative(30)">⏩ +30s</button>
+        <button class="pv__btn focusable" onclick="cycleAspectRatio()" id="btn-osd-aspect">📐 Aspect</button>
         <div class="vol-pill">
-          <button class="vol-pill__mute focusable" onclick="toggleMute()" id="btn-osd-mute" title="Mute / Unmute">🔊</button>
-          <input type="range" id="osd-vol-slider" class="vol-pill__slider focusable" min="0" max="100" step="1" value="100" oninput="setVolumePercent(this.value)" title="Adjust Volume" />
+          <button class="vol-pill__mute focusable" onclick="toggleMute()" id="btn-osd-mute">🔊</button>
+          <input type="range" id="osd-vol-slider" class="vol-pill__slider focusable" min="0" max="100" step="1" value="100" oninput="setVolumePercent(this.value)" />
           <span class="vol-pill__pct" id="osd-vol-pct">100%</span>
         </div>
-        <button class="pv__btn focusable" onclick="toggleBrowserFullscreen()" title="Fullscreen">⛶</button>
+        <button class="pv__btn focusable" onclick="exitFullscreenPlayer()">← Back to TV</button>
       </div>
     </div>
 
@@ -2550,45 +2324,45 @@
         oninput="onSeekSliderInput(this.value)" onchange="onSeekSliderCommit(this.value)" />
       <div class="pv__times">
         <span id="osd-time-cur">00:00</span>
-        <button class="chip vod-only" style="height:28px;font-size:11px;" onclick="seekToStart()">Start Over</button>
+        <button class="chip vod-only" style="height:26px;font-size:11px;" onclick="seekToStart()">Start Over</button>
         <span id="osd-time-rem">00:00</span>
       </div>
     </div>
   </section>
 
-  <!-- 8. FLOATING GENRE PICKER -->
+  <!-- 8. MODAL: GENRE PICKER -->
   <div id="modal-genre-picker" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-genre-picker')">
     <div class="menu__panel">
       <div class="menu__head">
-        <span id="genre-picker-title">Genres</span>
-        <button class="chip" style="height:30px;font-size:12px;" onclick="closeModal('modal-genre-picker')">✕</button>
+        <span id="genre-picker-title">Categories</span>
+        <button class="chip" style="height:28px;" onclick="closeModal('modal-genre-picker')">✕</button>
       </div>
-      <div style="padding:0 8px 10px;">
-        <input type="text" id="genre-picker-search" class="field-input" style="width:100%;" placeholder="Filter genres..." oninput="renderGenrePickerList()" />
+      <div style="padding:0 4px 10px;">
+        <input type="text" id="genre-picker-search" class="field-input" style="width:100%;" placeholder="Filter categories..." oninput="renderGenrePickerList()" />
       </div>
-      <div class="menu__list" id="genre-picker-list"></div>
+      <div class="menu__list" id="genre-picker-list" style="overflow-y:auto;max-height:55vh;display:flex;flex-direction:column;gap:4px;"></div>
     </div>
   </div>
 
   <!-- 9. MODAL: NEW PORTAL / PROFILE CONFIGURATION -->
   <div id="modal-new-profile" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-new-profile')">
-    <div class="menu__panel" style="max-width:640px;">
+    <div class="menu__panel" style="max-width:620px;">
       <div class="menu__head">
-        <span id="new-profile-modal-title">New Portal Configuration</span>
-        <button class="chip" style="height:30px;font-size:12px;" onclick="closeModal('modal-new-profile')">✕</button>
+        <span id="new-profile-modal-title">Stalker Portal Configuration</span>
+        <button class="chip" style="height:28px;" onclick="closeModal('modal-new-profile')">✕</button>
       </div>
-      <div style="overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:14px;">
+      <div style="overflow-y:auto;padding:4px;display:flex;flex-direction:column;gap:12px;">
         <div class="form-grid">
           <div class="field-group">
             <label>Profile Name (Optional)</label>
-            <input type="text" id="np-name" class="field-input focusable" placeholder="My IPTV Portal" />
+            <input type="text" id="np-name" class="field-input focusable" placeholder="My Stalker Portal" />
           </div>
           <div class="field-group">
             <label>STB Type</label>
             <div class="tv-select" id="tv-select-stbtype">
               <button type="button" id="np-stbtype-btn" class="field-select-btn focusable" onclick="toggleTvSelect('stbtype')">
                 <span id="np-stbtype-val">MAG250</span>
-                <span class="tv-select-caret">▾</span>
+                <span style="font-size:10px;">▾</span>
               </button>
               <div id="tv-select-options-stbtype" class="tv-select-dropdown">
                 <div class="tv-select-opt focusable" data-val="MAG250" onclick="chooseTvSelect('stbtype','MAG250')">MAG250</div>
@@ -2604,20 +2378,20 @@
           <div class="field-group">
             <label>Portal Host URL *</label>
             <input type="text" id="np-host" class="field-input focusable" placeholder="http://your-portal-domain.com/c" />
-            <span id="lbl-error-host" style="color:var(--live-red);font-size:12px;display:none;">Error! Host is not valid.</span>
+            <span id="lbl-error-host" style="color:var(--stb-red);font-size:11px;display:none;">Error! Host is not valid.</span>
           </div>
           <div class="field-group">
             <label>MAC Address *</label>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:6px;">
               <input type="text" id="np-mac" class="field-input focusable" placeholder="00:1A:79:00:00:00" style="flex:1;" />
-              <button type="button" id="np-mac-clear" class="btn focusable" style="padding:0 14px;border-radius:12px;font-size:13px;white-space:nowrap;" onclick="document.getElementById('np-mac').value='';document.getElementById('np-mac').focus();">✕ Clear</button>
+              <button type="button" id="np-mac-clear" class="btn focusable" style="padding:0 12px;font-size:12px;white-space:nowrap;" onclick="document.getElementById('np-mac').value='';document.getElementById('np-mac').focus();">✕ Clear</button>
             </div>
-            <span id="lbl-error-mac" style="color:var(--live-red);font-size:12px;display:none;">Error! MAC is not valid.</span>
+            <span id="lbl-error-mac" style="color:var(--stb-red);font-size:11px;display:none;">Error! MAC is not valid.</span>
           </div>
         </div>
 
-        <label class="srow focusable" tabindex="0" style="min-height:46px;border-radius:14px;" onclick="const chk=document.getElementById('np-adv-toggle');if(event.target!==chk){chk.checked=!chk.checked;chk.dispatchEvent(new Event('change'));}">
-          <span style="font-size:14px;">Advanced STB Hardware & Custom Parameters</span>
+        <label class="srow focusable" tabindex="0" style="min-height:42px;" onclick="const chk=document.getElementById('np-adv-toggle');if(event.target!==chk){chk.checked=!chk.checked;chk.dispatchEvent(new Event('change'));}">
+          <span style="font-size:13px;">Advanced STB Hardware & Custom Parameters</span>
           <input type="checkbox" id="np-adv-toggle" onchange="document.getElementById('np-adv-box').style.display=this.checked?'grid':'none'" />
         </label>
 
@@ -2647,7 +2421,7 @@
             <div class="tv-select" id="tv-select-sendhw">
               <button type="button" id="np-sendhw-btn" class="field-select-btn focusable" onclick="toggleTvSelect('sendhw')">
                 <span id="np-sendhw-val">Enabled</span>
-                <span class="tv-select-caret">▾</span>
+                <span style="font-size:10px;">▾</span>
               </button>
               <div id="tv-select-options-sendhw" class="tv-select-dropdown">
                 <div class="tv-select-opt focusable" data-val="true" onclick="chooseTvSelect('sendhw','true')">Enabled</div>
@@ -2672,7 +2446,7 @@
           </div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:6px;">
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px;">
           <button class="btn focusable" onclick="closeModal('modal-new-profile')">Cancel</button>
           <button class="btn btn--primary focusable" onclick="saveProfileForm()">Save & Connect</button>
         </div>
@@ -2682,68 +2456,68 @@
 
   <!-- 10. MODAL: PROFILES MANAGER -->
   <div id="modal-profiles" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-profiles')">
-    <div class="menu__panel" style="max-width:640px;">
+    <div class="menu__panel" style="max-width:600px;">
       <div class="menu__head">
-        <span>Portal Profiles</span>
-        <button class="chip" style="height:30px;font-size:12px;" onclick="closeModal('modal-profiles')">✕</button>
+        <span>Stalker Portal Profiles</span>
+        <button class="chip" style="height:28px;" onclick="closeModal('modal-profiles')">✕</button>
       </div>
-      <div id="profiles-list-container" class="menu__list" style="gap:10px;margin-bottom:14px;"></div>
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:0 6px;">
-        <button class="btn btn--primary" style="height:40px;font-size:13px;" onclick="closeModal('modal-profiles');openNewProfileModal()">➕ New Portal</button>
-        <button class="btn" style="height:40px;font-size:13px;" onclick="duplicateActiveProfile()">📋 Duplicate</button>
-        <button class="btn" style="height:40px;font-size:13px;" onclick="resetPortalCache()">🔄 Refresh</button>
-        <button class="btn btn--danger" style="height:40px;font-size:13px;" onclick="deleteAllProfiles()">🗑️ Delete All</button>
+      <div id="profiles-list-container" class="menu__list" style="gap:8px;margin-bottom:12px;overflow-y:auto;max-height:50vh;"></div>
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <button class="btn btn--primary" style="height:36px;font-size:12px;" onclick="closeModal('modal-profiles');openNewProfileModal()">➕ New Portal</button>
+        <button class="btn" style="height:36px;font-size:12px;" onclick="duplicateActiveProfile()">📋 Duplicate</button>
+        <button class="btn" style="height:36px;font-size:12px;" onclick="resetPortalCache()">🔄 Refresh</button>
+        <button class="btn btn--danger" style="height:36px;font-size:12px;" onclick="deleteAllProfiles()">🗑️ Delete All</button>
       </div>
     </div>
   </div>
 
   <!-- 11. MODAL: FILTER / HIDE GENRES -->
   <div id="modal-filter" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-filter')">
-    <div class="menu__panel" style="max-width:580px;">
+    <div class="menu__panel" style="max-width:560px;">
       <div class="menu__head">
-        <span>Filter / Hide Categories</span>
-        <div style="display:flex;gap:8px;">
-          <button class="chip" style="height:30px;font-size:12px;" onclick="state.hiddenGenres=[];saveState();renderFilterModal();renderLiveView()">Show All</button>
-          <button class="chip" style="height:30px;font-size:12px;" onclick="closeModal('modal-filter')">✕</button>
+        <span>Filter Categories</span>
+        <div style="display:flex;gap:6px;">
+          <button class="chip" style="height:28px;" onclick="state.hiddenGenres=[];saveState();renderFilterModal();renderLiveView()">Show All</button>
+          <button class="chip" style="height:28px;" onclick="closeModal('modal-filter')">✕</button>
         </div>
       </div>
-      <div id="filter-genres-list" class="menu__list"></div>
+      <div id="filter-genres-list" class="menu__list" style="overflow-y:auto;max-height:55vh;display:flex;flex-direction:column;gap:4px;"></div>
     </div>
   </div>
 
   <!-- 12. MODAL: REORDER CHANNELS -->
   <div id="modal-reorder" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-reorder')">
-    <div class="menu__panel" style="max-width:600px;">
+    <div class="menu__panel" style="max-width:580px;">
       <div class="menu__head">
-        <span>Reorder Channels (Move To Top)</span>
-        <button class="chip" style="height:30px;font-size:12px;" onclick="closeModal('modal-reorder')">✕</button>
+        <span>Reorder Channels</span>
+        <button class="chip" style="height:28px;" onclick="closeModal('modal-reorder')">✕</button>
       </div>
-      <div id="reorder-list" class="menu__list"></div>
+      <div id="reorder-list" class="menu__list" style="overflow-y:auto;max-height:55vh;display:flex;flex-direction:column;gap:4px;"></div>
     </div>
   </div>
 
   <!-- 13. MODAL: BACKUP & RESTORE CODE -->
   <div id="modal-backup" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-backup')">
-    <div class="menu__panel" style="max-width:620px;">
+    <div class="menu__panel" style="max-width:600px;">
       <div class="menu__head">
-        <span>Backup & Restore Code</span>
-        <button class="chip focusable" style="height:30px;font-size:12px;" onclick="closeModal('modal-backup')">✕</button>
+        <span>Backup & Restore Settings</span>
+        <button class="chip focusable" style="height:28px;" onclick="closeModal('modal-backup')">✕</button>
       </div>
-      <div style="padding:10px;display:flex;flex-direction:column;gap:14px;">
+      <div style="padding:8px;display:flex;flex-direction:column;gap:12px;">
         <div class="field-group">
-          <label>Your Restoration Code (Copy to restore on any TV, phone, or browser):</label>
-          <textarea id="backup-code-out" class="field-input focusable" rows="3" readonly style="font-family:monospace;font-size:12px;cursor:pointer;" onclick="copyBackupCode()"></textarea>
-          <button class="btn btn--primary focusable" style="margin-top:6px;" onclick="copyBackupCode()">📋 Copy Restoration Code</button>
+          <label>Your Restoration Code:</label>
+          <textarea id="backup-code-out" class="field-input focusable" rows="3" readonly style="font-family:monospace;font-size:11px;cursor:pointer;" onclick="copyBackupCode()"></textarea>
+          <button class="btn btn--primary focusable" style="margin-top:4px;" onclick="copyBackupCode()">📋 Copy Restoration Code</button>
         </div>
         <div class="field-group">
           <label>Paste or Enter Restoration Code to Restore:</label>
-          <textarea id="restore-code-in" class="field-input focusable" rows="3" placeholder="DAISY-... (Click or press OK to type on TV keyboard)" style="font-family:monospace;font-size:12px;" onclick="promptRestoreCode()" onkeydown="if(event.keyCode===13){event.preventDefault();promptRestoreCode();}"></textarea>
-          <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
-            <button type="button" class="btn focusable" style="flex:1;min-width:130px;padding:10px;" onclick="promptRestoreCode()">⌨️ Edit with Keyboard</button>
-            <button type="button" class="btn focusable" style="flex:1;min-width:130px;padding:10px;" onclick="pasteRestoreCode()">📋 Paste Clipboard</button>
-            <button type="button" class="btn focusable" style="padding:10px 14px;" onclick="document.getElementById('restore-code-in').value='';document.getElementById('restore-code-in').focus();">✕ Clear</button>
+          <textarea id="restore-code-in" class="field-input focusable" rows="3" placeholder="DAISY-... (Click or press OK to type on TV keyboard)" style="font-family:monospace;font-size:11px;" onclick="promptRestoreCode()" onkeydown="if(event.keyCode===13){event.preventDefault();promptRestoreCode();}"></textarea>
+          <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+            <button type="button" class="btn focusable" style="flex:1;padding:8px;" onclick="promptRestoreCode()">⌨️ Edit with Keyboard</button>
+            <button type="button" class="btn focusable" style="flex:1;padding:8px;" onclick="pasteRestoreCode()">📋 Paste Clipboard</button>
+            <button type="button" class="btn focusable" style="padding:8px 12px;" onclick="document.getElementById('restore-code-in').value='';document.getElementById('restore-code-in').focus();">✕ Clear</button>
           </div>
-          <button class="btn btn--primary focusable" style="margin-top:8px;padding:12px;" onclick="applyRestoreCode()">🔄 Restore Settings Now</button>
+          <button class="btn btn--primary focusable" style="margin-top:6px;padding:10px;" onclick="applyRestoreCode()">🔄 Restore Settings Now</button>
         </div>
       </div>
     </div>
@@ -2751,16 +2525,16 @@
 
   <!-- 14. MODAL: ABOUT -->
   <div id="modal-about" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-about')">
-    <div class="menu__panel" style="max-width:540px;">
+    <div class="menu__panel" style="max-width:520px;">
       <div class="menu__head">
-        <span>About DAISY IPTV v1.0.0</span>
-        <button class="chip focusable" style="height:30px;font-size:12px;" onclick="closeModal('modal-about')">✕</button>
+        <span>About Stalker Portal (Daisy IPTV)</span>
+        <button class="chip focusable" style="height:28px;" onclick="closeModal('modal-about')">✕</button>
       </div>
-      <div style="padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;font-size:14px;line-height:1.5;color:var(--text-secondary);">
-        <img src="icon.png" style="width:100px;height:100px;border-radius:22px;box-shadow:0 12px 30px rgba(0,0,0,0.7);object-fit:cover;" alt="DAISY IPTV Logo" />
-        <h3 style="color:#fff;margin:0;font-size:22px;font-weight:800;letter-spacing:0.5px;">DAISY IPTV</h3>
-        <p><strong style="color:#fff;">DAISY IPTV v1.0.0</strong> delivers a Jetpack Compose for TV (Material 3 for TV) interface with complete Set-Top Box MAC portal emulation on Samsung Smart TV (Tizen), Web, Android TV, Mobile, iOS, and Apple TV.</p>
-        <p>DAISY IPTV comes with no built-in channels or subscriptions. Configure your authorized portal in Settings.</p>
+      <div style="padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;font-size:13px;line-height:1.5;color:var(--stb-text-secondary);">
+        <img src="stalker/logo.png" onerror="this.src='icon.png'" style="height:60px;object-fit:contain;" alt="Stalker Logo" />
+        <h3 style="color:#FFF;margin:0;font-size:20px;font-weight:800;">DAISY IPTV — STALKER PORTAL</h3>
+        <p><strong style="color:#FFF;">DAISY IPTV v1.0.0</strong> delivers the authentic Infomir Stalker / Ministra Middleware interface with full Set-Top Box MAC portal emulation for Samsung Smart TV (Tizen), Web, Android TV, Mobile, iOS, and Apple TV.</p>
+        <p>No channels or subscriptions are included. Configure your authorized Stalker portal URL and MAC address in Settings.</p>
       </div>
     </div>
   </div>
@@ -5570,6 +5344,38 @@
       if (favBadge) favBadge.textContent = String(state.favChannels.length);
     }
 
+
+    // Additional Stalker Portal Bootloader & Remote Color Buttons Logic
+    function handleColorButton(color) {
+      if (color === 'red') {
+        if (currentTab === 'live') {
+          toggleActiveChannelFav();
+          showToast(state.activeChannel && state.favChannels.includes(state.activeChannel.id) ? '★ Added to Favorites' : '☆ Removed from Favorites');
+        } else {
+          switchTab('home');
+        }
+      } else if (color === 'green') {
+        if (currentTab === 'live') {
+          openGenrePicker('tv');
+        } else {
+          cycleAspectRatio();
+        }
+      } else if (color === 'yellow') {
+        switchTab('search');
+      } else if (color === 'blue') {
+        switchTab('settings');
+      }
+    }
+
+    // Hide Stalker Bootloader after initial connection
+    window.addEventListener('load', () => {
+      const loader = document.getElementById('stb-bootloader');
+      const fill = document.getElementById('stb-loading-fill');
+      if (fill) fill.style.width = '100%';
+      setTimeout(() => {
+        if (loader) loader.classList.add('is-hidden');
+      }, 1000);
+    });
   </script>
 </body>
 </html>
