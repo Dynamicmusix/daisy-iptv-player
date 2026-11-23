@@ -3,6 +3,7 @@ node_modules/
 package-lock.json
 
 # Build & Framework Directories
+backup/
 .expo/
 .vercel/
 dist/*
