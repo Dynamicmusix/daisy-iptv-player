@@ -12,7 +12,7 @@
     <tizen:application id="DaisyIPTV1.TV" package="DaisyIPTV1" required_version="4.0"/>
     <tizen:profile name="tv"/>
     
-    <name>Daisy IPTV</name>
+    <name>DAISY IPTV</name>
     <author>Daisy IPTV Team</author>
     <description>Universal Liquid Glass IPTV and STB Player for Samsung Smart TV</description>
     

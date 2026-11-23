@@ -4,7 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Daisy IPTV v1.0.0</title>
+  <title>DAISY IPTV</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <meta property="og:title" content="DAISY IPTV" />
+  <meta property="og:description" content="Universal Liquid Glass IPTV and STB Player" />
+  <meta property="og:image" content="/logo.png" />
   <script src="/mpegts.js"></script>
   <style>
     /* ============================================================
@@ -147,19 +152,27 @@
       top: 22px;
       left: 44px;
       height: 46px;
-      padding: 0 18px;
+      padding: 0 16px 0 10px;
       border-radius: 23px;
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 17px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
       pointer-events: auto;
       cursor: pointer;
       background: var(--glass), rgba(26, 28, 36, 0.72);
       box-shadow: var(--glass-shadow);
       border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .brand-badge__logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
     }
 
     .brand-badge span.ver {
@@ -2051,8 +2064,9 @@
 
   <!-- 3. FLOATING LIQUID GLASS TOP BAR (Tabs + Clock) -->
   <header id="top" class="top">
-    <div class="brand-badge focusable" tabindex="0" onclick="switchTab('home')" title="Daisy IPTV v1.0.0">
-      <span>🌼 Daisy IPTV</span>
+    <div class="brand-badge focusable" tabindex="0" onclick="switchTab('home')" title="DAISY IPTV v1.0.0">
+      <img src="icon.png" alt="DAISY IPTV" class="brand-badge__logo" />
+      <span>DAISY IPTV</span>
       <span class="ver">1.0.0</span>
     </div>
 
@@ -2658,15 +2672,14 @@
   <div id="modal-about" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-about')">
     <div class="menu__panel" style="max-width:540px;">
       <div class="menu__head">
-        <span>About Daisy IPTV v1.0.0</span>
-        <button class="chip" style="height:30px;font-size:12px;" onclick="closeModal('modal-about')">✕</button>
+        <span>About DAISY IPTV v1.0.0</span>
+        <button class="chip focusable" style="height:30px;font-size:12px;" onclick="closeModal('modal-about')">✕</button>
       </div>
-      <div
-        style="padding:14px;display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.5;color:var(--dim);">
-        <p><strong style="color:#fff;">Daisy IPTV v1.0.0</strong> combines a Liquid Glass Apple TV / tvOS interface with
-          full Set-Top Box MAC portal emulation across Web, Android TV, Mobile, iOS, and Apple TV.</p>
-        <p>Daisy IPTV comes with no built-in channels or subscriptions. Configure your own authorized portal in
-          Settings.</p>
+      <div style="padding:20px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;font-size:15px;line-height:1.5;color:var(--dim);">
+        <img src="icon.png" style="width:110px;height:110px;border-radius:24px;box-shadow:0 12px 32px rgba(0,0,0,0.7);object-fit:cover;" alt="DAISY IPTV Logo" />
+        <h3 style="color:#fff;margin:0;font-size:22px;font-weight:800;letter-spacing:0.5px;">DAISY IPTV</h3>
+        <p><strong style="color:#fff;">DAISY IPTV v1.0.0</strong> delivers a Liquid Glass Apple TV / tvOS interface with complete Set-Top Box MAC portal emulation on Samsung Smart TV (Tizen), Web, Android TV, Mobile, iOS, and Apple TV.</p>
+        <p>DAISY IPTV comes with no built-in channels or subscriptions. Configure your authorized portal in Settings.</p>
       </div>
     </div>
   </div>
