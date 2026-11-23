@@ -2648,24 +2648,30 @@
 
   <!-- 12. MODAL: BACKUP & RESTORE CODE -->
   <div id="modal-backup" class="menu-backdrop" onclick="if(event.target===this)closeModal('modal-backup')">
-    <div class="menu__panel" style="max-width:600px;">
+    <div class="menu__panel" style="max-width:620px;">
       <div class="menu__head">
         <span>Backup & Restore Code</span>
-        <button class="chip" style="height:30px;font-size:12px;" onclick="closeModal('modal-backup')">✕</button>
+        <button class="chip focusable" style="height:30px;font-size:12px;" onclick="closeModal('modal-backup')">✕</button>
       </div>
       <div style="padding:10px;display:flex;flex-direction:column;gap:14px;">
         <div class="field-group">
           <label>Your Restoration Code (Copy to restore on any TV, phone, or browser):</label>
-          <textarea id="backup-code-out" class="field-input" rows="3" readonly
-            style="font-family:monospace;font-size:12px;"></textarea>
-          <button class="btn btn--primary" style="margin-top:6px;" onclick="copyBackupCode()">📋 Copy Restoration
-            Code</button>
+          <textarea id="backup-code-out" class="field-input focusable" rows="3" readonly
+            style="font-family:monospace;font-size:12px;cursor:pointer;" onclick="copyBackupCode()"></textarea>
+          <button class="btn btn--primary focusable" style="margin-top:6px;" onclick="copyBackupCode()">📋 Copy Restoration Code</button>
         </div>
         <div class="field-group">
-          <label>Paste Restoration Code to Restore:</label>
-          <textarea id="restore-code-in" class="field-input" rows="3" placeholder="DAISY-..."
-            style="font-family:monospace;font-size:12px;"></textarea>
-          <button class="btn" style="margin-top:6px;" onclick="applyRestoreCode()">🔄 Restore Settings Now</button>
+          <label>Paste or Enter Restoration Code to Restore:</label>
+          <textarea id="restore-code-in" class="field-input focusable" rows="3" placeholder="DAISY-... (Click or press OK to type on TV keyboard)"
+            style="font-family:monospace;font-size:12px;"
+            onclick="promptRestoreCode()"
+            onkeydown="if(event.keyCode===13){event.preventDefault();promptRestoreCode();}"></textarea>
+          <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+            <button type="button" class="btn focusable" style="flex:1;min-width:130px;padding:10px;" onclick="promptRestoreCode()">⌨️ Edit with Keyboard</button>
+            <button type="button" class="btn focusable" style="flex:1;min-width:130px;padding:10px;" onclick="pasteRestoreCode()">📋 Paste Clipboard</button>
+            <button type="button" class="btn focusable" style="padding:10px 14px;" onclick="document.getElementById('restore-code-in').value='';document.getElementById('restore-code-in').focus();">✕ Clear</button>
+          </div>
+          <button class="btn btn--primary focusable" style="margin-top:8px;padding:12px;" onclick="applyRestoreCode()">🔄 Restore Settings Now</button>
         </div>
       </div>
     </div>
@@ -4566,8 +4572,33 @@
 
     function copyBackupCode() {
       const v = document.getElementById('backup-code-out').value;
-      navigator.clipboard.writeText(v);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(v).catch(() => { });
+      }
       showToast('Restoration Code copied to clipboard');
+    }
+
+    function promptRestoreCode() {
+      const cur = document.getElementById('restore-code-in').value || '';
+      const entered = prompt('Enter or paste your DAISY restoration code:', cur);
+      if (entered !== null) {
+        document.getElementById('restore-code-in').value = entered.trim();
+        showToast('Restoration Code updated');
+      }
+    }
+
+    async function pasteRestoreCode() {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text && text.trim()) {
+            document.getElementById('restore-code-in').value = text.trim();
+            showToast('Restoration Code pasted from clipboard');
+            return;
+          }
+        }
+      } catch (e) { }
+      promptRestoreCode();
     }
 
     function applyRestoreCode() {
@@ -4820,7 +4851,7 @@
     const container = openScope || document;
 
     const candidates = Array.from(container.querySelectorAll(
-      '.focusable, button:not([disabled]), [tabindex="0"], input:not([disabled]), select:not([disabled])'
+      '.focusable, button:not([disabled]), [tabindex="0"], input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
     )).filter(el => {
       if (el.offsetParent === null) return false;
       // Never focus options inside closed dropdowns
@@ -4958,9 +4989,9 @@
         }
       }
 
-      // Single-line inputs (e.g. np-name, np-host, np-mac):
+      // Single-line inputs and textareas (e.g. np-name, np-host, np-mac, restore-code-in):
       // On TV, Up and Down navigate vertically between form fields instead of trapping focus!
-      if (activeTag === 'INPUT' && !['range', 'checkbox', 'radio'].includes(activeEl.type)) {
+      if ((activeTag === 'INPUT' && !['range', 'checkbox', 'radio'].includes(activeEl.type)) || activeTag === 'TEXTAREA') {
         if (code === TV_KEY.UP || code === TV_KEY.DOWN) {
           e.preventDefault();
           const nextTarget = findNextSpatialFocus(code === TV_KEY.DOWN ? 'down' : 'up');

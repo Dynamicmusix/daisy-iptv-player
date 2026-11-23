@@ -38,7 +38,7 @@ function stopActiveStream() {
     try {
       if (activeStreamMeta.vodSession.activeUpstream.res) activeStreamMeta.vodSession.activeUpstream.res.destroy();
       if (activeStreamMeta.vodSession.activeUpstream.req) activeStreamMeta.vodSession.activeUpstream.req.destroy();
-    } catch (e) {}
+    } catch (e) { }
     activeStreamMeta.vodSession.activeUpstream = null;
   }
   if (activeUpstreamStream) {
@@ -46,11 +46,11 @@ function stopActiveStream() {
       if (activeUpstreamStream.ffmpeg) {
         activeUpstreamStream.ffmpeg.kill('SIGKILL');
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       if (activeUpstreamStream.res) activeUpstreamStream.res.destroy();
       if (activeUpstreamStream.req) activeUpstreamStream.req.destroy();
-    } catch (e) {}
+    } catch (e) { }
     activeUpstreamStream = null;
   }
 }
@@ -221,7 +221,7 @@ const server = http.createServer((req, res) => {
       try {
         if (session.activeUpstream.res) session.activeUpstream.res.destroy();
         if (session.activeUpstream.req) session.activeUpstream.req.destroy();
-      } catch (e) {}
+      } catch (e) { }
       session.activeUpstream = null;
     }
 
@@ -305,7 +305,7 @@ const server = http.createServer((req, res) => {
             try {
               upRes.destroy();
               upReq.destroy();
-            } catch (e) {}
+            } catch (e) { }
             return mintFreshVodTokenUrl((mErr, freshUrl) => {
               if (mErr || !freshUrl) {
                 res.writeHead(upRes.statusCode || 502);
@@ -334,7 +334,7 @@ const server = http.createServer((req, res) => {
             try {
               upRes.destroy();
               upReq.destroy();
-            } catch (e) {}
+            } catch (e) { }
             if (session.activeUpstream && session.activeUpstream.res === upRes) {
               session.activeUpstream = null;
             }
@@ -422,7 +422,7 @@ const server = http.createServer((req, res) => {
           res.writeHead(statusCode, outHeaders);
 
           if (req.method === 'HEAD') {
-            try { upstreamRes.destroy(); upstreamReq.destroy(); } catch (e) {}
+            try { upstreamRes.destroy(); upstreamReq.destroy(); } catch (e) { }
             return res.end();
           }
 
@@ -431,7 +431,7 @@ const server = http.createServer((req, res) => {
             try {
               upstreamRes.destroy();
               upstreamReq.destroy();
-            } catch (e) {}
+            } catch (e) { }
             if (activeUpstreamStream && activeUpstreamStream.res === upstreamRes) {
               activeUpstreamStream = null;
             }
@@ -495,12 +495,12 @@ const server = http.createServer((req, res) => {
           });
 
           upstreamRes.pipe(ffProc.stdin);
-          ffProc.stdin.on('error', () => {});
+          ffProc.stdin.on('error', () => { });
           ffProc.stdout.pipe(res);
 
           const cleanup = () => {
-            try { ffProc.kill('SIGKILL'); } catch (e) {}
-            try { upstreamRes.destroy(); upstreamReq.destroy(); } catch (e) {}
+            try { ffProc.kill('SIGKILL'); } catch (e) { }
+            try { upstreamRes.destroy(); upstreamReq.destroy(); } catch (e) { }
             if (activeUpstreamStream && activeUpstreamStream.ffmpeg === ffProc) {
               activeUpstreamStream = null;
             }
@@ -508,7 +508,7 @@ const server = http.createServer((req, res) => {
 
           req.on('close', cleanup);
           ffProc.on('close', () => {
-            try { res.end(); } catch (e) {}
+            try { res.end(); } catch (e) { }
           });
           return;
         }
@@ -534,7 +534,7 @@ const server = http.createServer((req, res) => {
           try {
             upstreamRes.destroy();
             upstreamReq.destroy();
-          } catch (e) {}
+          } catch (e) { }
           if (activeUpstreamStream && activeUpstreamStream.res === upstreamRes) {
             activeUpstreamStream = null;
           }

@@ -12,7 +12,7 @@ const { URL } = require('url');
 let ffmpegPath = null;
 try {
   ffmpegPath = require('ffmpeg-static');
-} catch (e) {}
+} catch (e) { }
 
 function buildPortalHeaders(mac, stbType, refererHost, token) {
   const safeMac = mac || '00:1A:79:00:00:00';
@@ -147,7 +147,7 @@ module.exports = (req, res) => {
         try {
           upstreamRes.destroy();
           upstreamReq.destroy();
-        } catch (e) {}
+        } catch (e) { }
         return res.end();
       }
 
@@ -156,7 +156,7 @@ module.exports = (req, res) => {
         try {
           upstreamRes.destroy();
           upstreamReq.destroy();
-        } catch (e) {}
+        } catch (e) { }
       });
     });
     return;
@@ -222,23 +222,23 @@ module.exports = (req, res) => {
         });
 
         upstreamRes.pipe(ffProc.stdin);
-        ffProc.stdin.on('error', () => {});
+        ffProc.stdin.on('error', () => { });
         ffProc.stdout.pipe(res);
 
         const cleanup = () => {
           try {
             ffProc.kill('SIGKILL');
-          } catch (e) {}
+          } catch (e) { }
           try {
             upstreamRes.destroy();
             upstreamReq.destroy();
-          } catch (e) {}
+          } catch (e) { }
         };
         req.on('close', cleanup);
         ffProc.on('close', () => {
           try {
             res.end();
-          } catch (e) {}
+          } catch (e) { }
         });
         return;
       } catch (spawnErr) {
@@ -261,7 +261,7 @@ module.exports = (req, res) => {
       try {
         upstreamRes.destroy();
         upstreamReq.destroy();
-      } catch (e) {}
+      } catch (e) { }
     });
   });
 };
