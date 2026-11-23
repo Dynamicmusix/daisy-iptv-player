@@ -1,0 +1,15 @@
+{
+  "name": "Daisy IPTV",
+  "description": "Universal Liquid Glass IPTV and STB Player with Apple TV style UI for Samsung Smart TV. Supports Live TV, VOD Movies, Series, EPG, and full TV remote control.",
+  "category": "iptv",
+  "repo": "Dynamicmusix/daisy-iptv-player",
+  "source": "release",
+  "branch": "main",
+  "assets": [
+    {
+      "match": "^daisy-iptv-v.*[.]wgt$",
+      "output_name": "DaisyIPTV.wgt"
+    }
+  ],
+  "cert_level": "partner"
+}

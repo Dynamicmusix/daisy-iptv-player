@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "echo \"Static assets in public/ and Serverless Functions in api/ are ready for Vercel\""
+    "build": "echo \"Static assets in public/ and Serverless Functions in api/ are ready for Vercel\"",
+    "package:tizen": "powershell -ExecutionPolicy Bypass -File tools/build-tizen.ps1"
   },
   "dependencies": {
     "ffmpeg-static": "^5.2.0"

@@ -1579,6 +1579,41 @@
       opacity: 1;
       transform: translate(-50%, 0);
     }
+
+    /* TV Remote Active Focus Outline */
+    .focusable:focus,
+    .focusable.is-focused {
+      outline: 3px solid #0a84ff !important;
+      outline-offset: 2px !important;
+    }
+    .card:focus, .card.is-focused,
+    .lcard:focus, .lcard.is-focused,
+    .tab:focus, .tab.is-focused {
+      outline: none !important;
+    }
+
+    /* Remote Number Overlay */
+    .tv-channel-overlay {
+      position: fixed;
+      top: 40px;
+      right: 50px;
+      background: rgba(15, 23, 42, 0.94);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.85);
+      border-radius: 16px;
+      padding: 14px 28px;
+      font-size: 42px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 6px;
+      z-index: 100000;
+      display: none;
+      pointer-events: none;
+      backdrop-filter: blur(20px);
+    }
+    .tv-channel-overlay.is-visible {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -1791,6 +1826,14 @@
               <span class="srow__sub">Configure Host URL, MAC address, and MAG STB model</span>
             </div>
             <div class="srow__value">Add ›</div>
+          </div>
+
+          <div class="srow focusable" tabindex="0" onclick="promptBackendUrl()" onmouseenter="setSettingsHero('🌐','API & Stream Proxy Backend','Configure proxy backend URL for Smart TV widget mode (default: https://daisy-iptv-player.vercel.app).')">
+            <div class="srow__label">
+              <span>API & Stream Proxy Backend</span>
+              <span class="srow__sub" id="set-proxy-backend-sub">https://daisy-iptv-player.vercel.app</span>
+            </div>
+            <div class="srow__value">Change ›</div>
           </div>
 
           <div class="srow focusable" tabindex="0" onclick="openModal('modal-backup')" onmouseenter="setSettingsHero('☁️','Backup & Restore Code','Generate a DAISY-... restoration code to transfer all profiles, favorites, and settings to your TV, phone, or tablet.')">
@@ -2133,8 +2176,9 @@
     </div>
   </div>
 
-  <!-- TOAST -->
+  <!-- TOAST & TV OVERLAY -->
   <div id="toast" class="toast"></div>
+  <div id="tv-channel-overlay" class="tv-channel-overlay"></div>
 
 <script>
   // ============================================================================
@@ -2171,6 +2215,7 @@
     profiles: [JSON.parse(JSON.stringify(DEFAULT_PROFILE))],
     activeProfileId: DEFAULT_PROFILE.id,
     prefs: {
+      proxyBackendUrl: 'https://daisy-iptv-player.vercel.app',
       tvPlayer: 'Auto',
       vodPlayer: 'Auto',
       aspectRatio: 'Auto',
@@ -2282,14 +2327,26 @@
   }
 
   // ============================================================================
-  // PORTAL API CLIENT
+  // PORTAL API CLIENT & STANDALONE ROUTING
   // ============================================================================
+  function getApiBaseUrl() {
+    const origin = window.location.origin;
+    // On Samsung Tizen Smart TVs, origin is 'widget://DaisyIPTV1' or 'file://' or null
+    if (!origin || origin === 'null' || origin.startsWith('widget:') || origin.startsWith('file:') || (origin.includes('localhost') && !window.location.port)) {
+      if (state && state.prefs && state.prefs.proxyBackendUrl && state.prefs.proxyBackendUrl.trim()) {
+        return state.prefs.proxyBackendUrl.trim().replace(/\/+$/, '');
+      }
+      return 'https://daisy-iptv-player.vercel.app';
+    }
+    return origin;
+  }
+
   async function portalApi(params, retryAuth = true) {
     const prof = getActiveProfile();
     const endpoint = normalizePortalEndpoint(prof.host);
     if (!endpoint) throw new Error('Please configure your Portal Host and MAC address.');
 
-    const url = new URL('/api/portal', window.location.origin);
+    const url = new URL('/api/portal', getApiBaseUrl());
     url.searchParams.set('_endpoint', endpoint);
     url.searchParams.set('_mac', prof.mac);
     url.searchParams.set('_stbType', prof.stbType || 'MAG250');
@@ -2817,7 +2874,7 @@
 
     const prof = getActiveProfile();
     const endpoint = normalizePortalEndpoint(prof.host);
-    let proxiedUrl = `/api/stream?url=${encodeURIComponent(rawStreamUrl)}&mac=${encodeURIComponent(prof.mac)}&stbType=${encodeURIComponent(prof.stbType || 'MAG250')}`;
+    let proxiedUrl = `${getApiBaseUrl()}/api/stream?url=${encodeURIComponent(rawStreamUrl)}&mac=${encodeURIComponent(prof.mac)}&stbType=${encodeURIComponent(prof.stbType || 'MAG250')}`;
     if (!isLiveTs) {
       proxiedUrl += `&vod=1&ss=${Math.floor(state.vodSeekOffsetSec)}`;
       if (endpoint) proxiedUrl += `&endpoint=${encodeURIComponent(endpoint)}`;
@@ -3721,8 +3778,20 @@
     setEl('val-portalTheme', state.prefs.portalTheme ? 'On' : 'Off');
     setEl('val-forceLogin', state.prefs.forceLogin ? 'On' : 'Off');
     setEl('val-onlineBackup', state.prefs.onlineBackup ? 'On' : 'Off');
+    setEl('set-proxy-backend-sub', (state.prefs && state.prefs.proxyBackendUrl) || 'https://daisy-iptv-player.vercel.app');
 
     document.body.classList.toggle('portal-theme', !!state.prefs.portalTheme);
+  }
+
+  function promptBackendUrl() {
+    const cur = (state.prefs && state.prefs.proxyBackendUrl) || 'https://daisy-iptv-player.vercel.app';
+    const entered = prompt('Enter Daisy IPTV API / Stream Proxy Backend URL:', cur);
+    if (entered !== null && entered.trim()) {
+      state.prefs.proxyBackendUrl = entered.trim().replace(/\/+$/, '');
+      saveState();
+      syncSettingsLabels();
+      showToast(`Proxy backend: ${state.prefs.proxyBackendUrl}`);
+    }
   }
 
   function openNewProfileModal(editId) {
@@ -3975,47 +4044,353 @@
     }
   }, 8000);
 
-  // TV Remote / Keyboard D-Pad navigation
+  // ============================================================================
+  // SAMSUNG TIZEN TV REMOTE KEYMAP, 2D SPATIAL NAVIGATION & HARDWARE CONTROLS
+  // ============================================================================
+  const TV_KEY = {
+    LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13,
+    RETURN: 10009, ESC: 27, BACKSPACE: 8, WEBOS_BACK: 461,
+    PLAY: 415, PAUSE: 19, PLAYPAUSE: 10252, STOP: 413,
+    FF: 417, RW: 412, PREV: 10232, NEXT: 10233,
+    CH_UP: 427, CH_DOWN: 428, PAGE_UP: 33, PAGE_DOWN: 34,
+    RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406,
+    INFO: 457, GUIDE: 458
+  };
+
+  function isBackKey(code) {
+    return code === TV_KEY.RETURN || code === TV_KEY.ESC || code === TV_KEY.BACKSPACE || code === TV_KEY.WEBOS_BACK;
+  }
+
+  function registerTizenKeys() {
+    if (window.tizen && window.tizen.tvinputdevice) {
+      const keys = [
+        "ChannelUp", "ChannelDown", "MediaPlayPause", "MediaPlay", "MediaPause", "MediaStop",
+        "MediaFastForward", "MediaRewind", "MediaTrackPrevious", "MediaTrackNext",
+        "Info", "Guide", "ChannelList", "PreviousChannel", "Exit",
+        "ColorF0Red", "ColorF1Green", "ColorF2Yellow", "ColorF3Blue",
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+      ];
+      keys.forEach(k => {
+        try { window.tizen.tvinputdevice.registerKey(k); } catch (e) {}
+      });
+    }
+  }
+
+  function handleBackAction() {
+    if (document.body.classList.contains('in-player')) {
+      exitFullscreenPlayer();
+      return;
+    }
+    const openModals = Array.from(document.querySelectorAll('.menu-backdrop.is-open'));
+    if (openModals.length > 0) {
+      const topModal = openModals[openModals.length - 1];
+      topModal.classList.remove('is-open');
+      return;
+    }
+    const detail = document.getElementById('detail');
+    if (detail && detail.classList.contains('is-open')) {
+      detail.classList.remove('is-open');
+      return;
+    }
+    if (currentTab !== 'home') {
+      switchTab('home');
+      return;
+    }
+    // At root home view, exit Tizen app if supported
+    if (window.tizen && window.tizen.application) {
+      try { window.tizen.application.getCurrentApplication().exit(); } catch (e) {}
+    }
+  }
+
+  window.addEventListener('tizenhwkey', (e) => {
+    if (e.keyName === 'back') {
+      handleBackAction();
+    }
+  });
+
+  function channelStep(delta) {
+    if (!state.tvChannels || state.tvChannels.length === 0) return;
+    const valid = state.tvChannels.filter(c => !c.name.includes('###'));
+    if (valid.length === 0) return;
+    let curIdx = valid.findIndex(c => state.activeChannel && String(c.id) === String(state.activeChannel.id));
+    if (curIdx === -1) curIdx = 0;
+    const nextIdx = (curIdx + delta + valid.length) % valid.length;
+    const targetCh = valid[nextIdx];
+    if (targetCh) {
+      playTvChannel(targetCh.id);
+      showToast(`📺 Ch ${targetCh.number || nextIdx + 1}: ${targetCh.name}`);
+    }
+  }
+
+  let numberBuffer = '';
+  let numberBufferTimer = null;
+  function handleRemoteDigit(digit) {
+    numberBuffer += String(digit);
+    const overlay = document.getElementById('tv-channel-overlay');
+    if (overlay) {
+      overlay.textContent = numberBuffer;
+      overlay.classList.add('is-visible');
+    }
+    if (numberBufferTimer) clearTimeout(numberBufferTimer);
+    numberBufferTimer = setTimeout(() => {
+      commitRemoteDigit(numberBuffer);
+      numberBuffer = '';
+      if (overlay) overlay.classList.remove('is-visible');
+    }, 1200);
+  }
+
+  function commitRemoteDigit(numStr) {
+    const n = parseInt(numStr, 10);
+    if (isNaN(n) || !state.tvChannels || state.tvChannels.length === 0) return;
+    const valid = state.tvChannels.filter(c => !c.name.includes('###'));
+    let ch = valid.find(c => parseInt(c.number, 10) === n);
+    if (!ch && n > 0 && n <= valid.length) {
+      ch = valid[n - 1];
+    }
+    if (ch) {
+      playTvChannel(ch.id);
+      showToast(`📺 Ch ${ch.number || n}: ${ch.name}`);
+    } else {
+      showToast(`Channel ${n} not found`);
+    }
+  }
+
+  function findNextSpatialFocus(direction) {
+    const openScope = document.querySelector('.menu-backdrop.is-open') || document.querySelector('.detail.is-open');
+    const container = openScope || document;
+
+    const candidates = Array.from(container.querySelectorAll(
+      '.focusable, button:not([disabled]), [tabindex="0"], input:not([disabled]), select:not([disabled])'
+    )).filter(el => {
+      if (el.offsetParent === null) return false;
+      const st = window.getComputedStyle(el);
+      if (st.display === 'none' || st.visibility === 'hidden' || st.opacity === '0') return false;
+      const b = el.getBoundingClientRect();
+      return b.width > 0 && b.height > 0;
+    });
+
+    if (!candidates.length) return null;
+
+    let cur = document.activeElement;
+    if (!cur || !candidates.includes(cur)) {
+      return candidates[0];
+    }
+
+    const curR = cur.getBoundingClientRect();
+    const curCx = curR.left + curR.width / 2;
+    const curCy = curR.top + curR.height / 2;
+
+    const intervalOverlapDist = (a1, a2, b1, b2) => Math.max(0, Math.max(a1 - b2, b1 - a2));
+
+    let bestEl = null;
+    let bestScore = Infinity;
+
+    for (const c of candidates) {
+      if (c === cur) continue;
+      const cR = c.getBoundingClientRect();
+      const cCx = cR.left + cR.width / 2;
+      const cCy = cR.top + cR.height / 2;
+      const dx = cCx - curCx;
+      const dy = cCy - curCy;
+
+      let eligible = false;
+      let primary = 0;
+      let cross = 0;
+
+      switch (direction) {
+        case 'left':
+          if (dx < -4) {
+            eligible = true;
+            primary = -dx;
+            cross = intervalOverlapDist(curR.top, curR.bottom, cR.top, cR.bottom) * 2.5 + Math.abs(dy) * 0.3;
+          }
+          break;
+        case 'right':
+          if (dx > 4) {
+            eligible = true;
+            primary = dx;
+            cross = intervalOverlapDist(curR.top, curR.bottom, cR.top, cR.bottom) * 2.5 + Math.abs(dy) * 0.3;
+          }
+          break;
+        case 'up':
+          if (dy < -4) {
+            eligible = true;
+            primary = -dy;
+            cross = intervalOverlapDist(curR.left, curR.right, cR.left, cR.right) * 2.5 + Math.abs(dx) * 0.3;
+          }
+          break;
+        case 'down':
+          if (dy > 4) {
+            eligible = true;
+            primary = dy;
+            cross = intervalOverlapDist(curR.left, curR.right, cR.left, cR.right) * 2.5 + Math.abs(dx) * 0.3;
+          }
+          break;
+      }
+
+      if (!eligible) continue;
+      const score = primary + cross;
+      if (score < bestScore) {
+        bestScore = score;
+        bestEl = c;
+      }
+    }
+
+    return bestEl;
+  }
+
+  function applySpatialFocus(target) {
+    if (!target) return;
+    document.querySelectorAll('.is-focused').forEach(node => node.classList.remove('is-focused'));
+    target.classList.add('is-focused');
+    target.focus();
+    try {
+      target.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    } catch (e) {
+      target.scrollIntoView(false);
+    }
+  }
+
   window.addEventListener('keydown', (e) => {
+    const code = e.keyCode;
+
+    // 1. Text input typing: leave arrows & text to the input field, allow Escape/Back to blur
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+      if (isBackKey(code)) {
+        e.preventDefault();
+        document.activeElement.blur();
+      }
+      return;
+    }
+
+    // 2. Global Back / Return key
+    if (isBackKey(code)) {
+      e.preventDefault();
+      handleBackAction();
+      return;
+    }
+
+    // 3. Media Keys (Play, Pause, PlayPause, Stop, FastForward, Rewind)
+    if (code === TV_KEY.PLAY || code === TV_KEY.PAUSE || code === TV_KEY.PLAYPAUSE) {
+      e.preventDefault();
+      togglePlayPause();
+      return;
+    }
+    if (code === TV_KEY.STOP) {
+      e.preventDefault();
+      if (document.body.classList.contains('in-player')) {
+        exitFullscreenPlayer();
+      } else {
+        const v = document.getElementById('daisy-video');
+        if (v) v.pause();
+      }
+      return;
+    }
+    if (code === TV_KEY.FF) {
+      e.preventDefault();
+      if (!state.isLiveStream) seekRelative(30);
+      return;
+    }
+    if (code === TV_KEY.RW) {
+      e.preventDefault();
+      if (!state.isLiveStream) seekRelative(-30);
+      return;
+    }
+
+    // 4. Channel Up / Down (or Page Up / Down)
+    if (code === TV_KEY.CH_UP || code === TV_KEY.PAGE_UP) {
+      e.preventDefault();
+      channelStep(1);
+      return;
+    }
+    if (code === TV_KEY.CH_DOWN || code === TV_KEY.PAGE_DOWN) {
+      e.preventDefault();
+      channelStep(-1);
+      return;
+    }
+
+    // 5. Remote Color Buttons (Red, Green, Yellow, Blue)
+    if (code === TV_KEY.RED) {
+      e.preventDefault();
+      toggleActiveFav();
+      showToast(state.activeChannel && state.favChannels.includes(state.activeChannel.id) ? '★ Added to Favorites' : '☆ Removed from Favorites');
+      return;
+    }
+    if (code === TV_KEY.GREEN) {
+      e.preventDefault();
+      showToast('Refreshing Portal Data...');
+      connectPortal(false);
+      return;
+    }
+    if (code === TV_KEY.YELLOW) {
+      e.preventDefault();
+      switchTab('search');
+      return;
+    }
+    if (code === TV_KEY.BLUE) {
+      e.preventDefault();
+      openModal('menu-settings');
+      return;
+    }
+
+    // 6. Direct Channel Digits (0 - 9)
+    if ((code >= 48 && code <= 57) || (code >= 96 && code <= 105)) {
+      const digit = code >= 96 ? code - 96 : code - 48;
+      handleRemoteDigit(digit);
+      return;
+    }
+
+    // 7. Fullscreen Video Player Mode Controls
     if (document.body.classList.contains('in-player')) {
       wakeOsd();
-      if (e.key === 'Escape' || e.key === 'Backspace') {
+      if (!state.isLiveStream && (code === TV_KEY.RIGHT || code === TV_KEY.LEFT)) {
         e.preventDefault();
-        exitFullscreenPlayer();
+        seekRelative(code === TV_KEY.RIGHT ? 15 : -15);
         return;
       }
-      if (!state.isLiveStream && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+      if (state.isLiveStream && (code === TV_KEY.UP || code === TV_KEY.DOWN)) {
         e.preventDefault();
-        seekRelative(e.key === 'ArrowRight' ? 15 : -15);
+        channelStep(code === TV_KEY.UP ? 1 : -1);
         return;
       }
-      if (e.key === ' ' && document.activeElement?.tagName !== 'BUTTON') {
+      if (code === 32) { // Space
         e.preventDefault();
         togglePlayPause();
         return;
       }
     }
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
-      if (e.key === 'Escape') document.activeElement.blur();
+
+    // 8. 2D Spatial D-Pad Navigation (Arrows)
+    let dir = null;
+    if (code === TV_KEY.LEFT) dir = 'left';
+    else if (code === TV_KEY.RIGHT) dir = 'right';
+    else if (code === TV_KEY.UP) dir = 'up';
+    else if (code === TV_KEY.DOWN) dir = 'down';
+
+    if (dir) {
+      e.preventDefault();
+      const nextTarget = findNextSpatialFocus(dir);
+      if (nextTarget) {
+        applySpatialFocus(nextTarget);
+      }
       return;
     }
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.menu-backdrop.is-open').forEach(m => m.classList.remove('is-open'));
-      document.getElementById('detail').classList.remove('is-open');
-      return;
-    }
-    const focusables = Array.from(document.querySelectorAll('.focusable')).filter(el => el.offsetParent !== null);
-    if (!focusables.length) return;
-    const idx = focusables.indexOf(document.activeElement);
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      focusables[(idx + 1) % focusables.length]?.focus();
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      focusables[(idx - 1 + focusables.length) % focusables.length]?.focus();
-    } else if (e.key === 'Enter' && document.activeElement?.classList.contains('focusable')) {
-      e.preventDefault();
-      document.activeElement.click();
+
+    // 9. Enter / OK Key
+    if (code === TV_KEY.ENTER) {
+      if (numberBuffer.length > 0) {
+        e.preventDefault();
+        if (numberBufferTimer) clearTimeout(numberBufferTimer);
+        commitRemoteDigit(numberBuffer);
+        numberBuffer = '';
+        const overlay = document.getElementById('tv-channel-overlay');
+        if (overlay) overlay.classList.remove('is-visible');
+        return;
+      }
+      if (document.activeElement && (document.activeElement.classList.contains('focusable') || document.activeElement.tagName === 'BUTTON')) {
+        e.preventDefault();
+        document.activeElement.click();
+      }
     }
   });
 
@@ -4187,6 +4562,11 @@
   document.body.classList.add('is-live-playback');
   loadState();
   applySavedVolumeToVideo();
+  registerTizenKeys();
+  setTimeout(() => {
+    const initialFocus = document.querySelector('.tab.is-current') || document.querySelector('.focusable');
+    if (initialFocus) applySpatialFocus(initialFocus);
+  }, 400);
   connectPortal(true);
 </script>
 </body>
