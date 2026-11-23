@@ -9,8 +9,8 @@
   <link rel="apple-touch-icon" href="icon.png" />
   <meta property="og:title" content="DAISY IPTV" />
   <meta property="og:description" content="Universal Liquid Glass IPTV and STB Player" />
-  <meta property="og:image" content="/logo.png" />
-  <script src="/mpegts.js"></script>
+  <meta property="og:image" content="logo.png" />
+  <script src="mpegts.js"></script>
   <style>
     /* ============================================================
        DAISY IPTV v1.0.0 — APL TV (tvOS 26 Liquid Glass) UI/UX
@@ -3367,10 +3367,33 @@
       document.getElementById('lv-prog-title').textContent = ch.name;
       document.getElementById('lv-stream-info').textContent = `Resolving stream token (${state.prefs.tvPlayer})...`;
 
-      const directUrl = await resolveFreshChannelUrl(ch);
-      startVideoPlayback(directUrl, `${ch.number}. ${ch.name}`, true);
-      loadShortEpg(ch.id);
+      try {
+        const directUrl = await resolveFreshChannelUrl(ch);
+        startVideoPlayback(directUrl, `${ch.number}. ${ch.name}`, true);
+        loadShortEpg(ch.id);
+      } catch (err) {
+        console.error('Error starting channel playback:', err);
+        document.getElementById('lv-stream-info').textContent = `Playback error: ${err.message || 'Stream unavailable'}`;
+      }
     }
+
+  function destroyMpegtsPlayer() {
+    if (mpegtsPlayer) {
+      try {
+        mpegtsPlayer.pause();
+      } catch (e) { }
+      try {
+        mpegtsPlayer.unload();
+      } catch (e) { }
+      try {
+        mpegtsPlayer.detachMediaElement();
+      } catch (e) { }
+      try {
+        mpegtsPlayer.destroy();
+      } catch (e) { }
+      mpegtsPlayer = null;
+    }
+  }
 
   function startVideoPlayback(rawStreamUrl, title, isLiveTs, seekOffsetSec = 0) {
     state.activeStreamUrl = rawStreamUrl;
@@ -3392,74 +3415,91 @@
     }
     proxiedUrl += `&_t=${Date.now()}`;
 
-      const videoEl = document.getElementById('daisy-video');
+    const videoEl = document.getElementById('daisy-video');
 
-      destroyMpegtsPlayer();
+    destroyMpegtsPlayer();
+    try {
       videoEl.pause();
       videoEl.removeAttribute('src');
-      videoEl.playbackRate = Number(state.prefs.speed) || 1.0;
-      applySavedVolumeToVideo();
+      videoEl.load();
+    } catch (e) { }
+    videoEl.playbackRate = Number(state.prefs.speed) || 1.0;
+    applySavedVolumeToVideo();
 
-      document.body.classList.add('has-video');
-      document.body.classList.toggle('is-live-playback', Boolean(isLiveTs));
-      document.getElementById('osd-title').textContent = title;
-      document.getElementById('osd-badge').textContent = isLiveTs ? 'LIVE' : 'VOD';
-      document.getElementById('lv-stream-info').textContent = isLiveTs
-        ? `Connecting Live TV • Engine: ${state.prefs.tvPlayer}`
-        : `Connecting VOD • Direct Web Stream`;
-      updateVodTimelineUi();
+    document.body.classList.add('has-video');
+    document.body.classList.toggle('is-live-playback', Boolean(isLiveTs));
+    document.getElementById('osd-title').textContent = title;
+    document.getElementById('osd-badge').textContent = isLiveTs ? 'LIVE' : 'VOD';
+    document.getElementById('lv-stream-info').textContent = isLiveTs
+      ? `Connecting Live TV • Engine: ${state.prefs.tvPlayer}`
+      : `Connecting VOD • Direct Web Stream`;
+    updateVodTimelineUi();
 
-      if (!isLiveTs) {
-        // VOD Playback via Native HTML5 Video with full HTTP Range seekability
-        videoEl.src = proxiedUrl;
+    videoEl.onplaying = () => {
+      const resTxt = videoEl.videoWidth ? `${videoEl.videoWidth}x${videoEl.videoHeight}` : 'HD';
+      document.getElementById('lv-stream-info').textContent = `PLAYING • ${resTxt} (${isLiveTs ? 'Live' : 'VOD'})`;
+      document.getElementById('osd-sub').textContent = `Daisy IPTV • ${resTxt}`;
+    };
 
-        videoEl.onloadedmetadata = () => {
-          if (videoEl.duration && isFinite(videoEl.duration) && videoEl.duration > 0) {
-            state.vodDurationSec = videoEl.duration;
-          }
-          if (state.vodSeekOffsetSec > 0) {
-            try { videoEl.currentTime = state.vodSeekOffsetSec; } catch (e) { }
-          }
-          updateVodTimelineUi();
-        };
+    videoEl.onwaiting = () => {
+      document.getElementById('lv-stream-info').textContent = `Buffering stream...`;
+    };
 
-        videoEl.onloadeddata = () => {
-          const resTxt = `${videoEl.videoWidth || ''}x${videoEl.videoHeight || ''}`;
-          document.getElementById('lv-stream-info').textContent = `PLAYING • ${resTxt} (VOD Direct)`;
-          document.getElementById('osd-sub').textContent = `Daisy IPTV • ${resTxt} VOD`;
-        };
+    if (!isLiveTs) {
+      // VOD Playback via Native HTML5 Video with full HTTP Range seekability
+      videoEl.src = proxiedUrl;
 
-        videoEl.onerror = () => {
-          // Fallback: If native playback encounters format error, try mpegtsPlayer if .ts stream
-          if (window.mpegts && window.mpegts.isSupported() && !mpegtsPlayer) {
-            try {
-              mpegtsPlayer = window.mpegts.createPlayer({
-                type: 'mpegts',
-                isLive: false,
-                url: proxiedUrl
-              }, {
-                enableWorker: false,
-                enableStashBuffer: false,
-                stashInitialSize: 128 * 1024,
-                autoCleanupSourceBuffer: true,
-              });
-              mpegtsPlayer.attachMediaElement(videoEl);
-              mpegtsPlayer.load();
-              mpegtsPlayer.play().catch(() => { });
-            } catch (e) { }
-          }
-        };
-
-        const playPromise = videoEl.play();
-        if (playPromise && playPromise.catch) {
-          playPromise.catch(() => {
-            videoEl.muted = true;
-            videoEl.play().catch(() => { });
-          });
+      videoEl.onloadedmetadata = () => {
+        if (videoEl.duration && isFinite(videoEl.duration) && videoEl.duration > 0) {
+          state.vodDurationSec = videoEl.duration;
         }
-      } else {
-        // Live TV Playback via mpegts.js for MPEG-2 Transport Stream
-        if (window.mpegts && window.mpegts.isSupported()) {
+        if (state.vodSeekOffsetSec > 0) {
+          try { videoEl.currentTime = state.vodSeekOffsetSec; } catch (e) { }
+        }
+        updateVodTimelineUi();
+      };
+
+      videoEl.onloadeddata = () => {
+        const resTxt = `${videoEl.videoWidth || ''}x${videoEl.videoHeight || ''}`;
+        document.getElementById('lv-stream-info').textContent = `PLAYING • ${resTxt} (VOD Direct)`;
+        document.getElementById('osd-sub').textContent = `Daisy IPTV • ${resTxt} VOD`;
+      };
+
+      videoEl.onerror = () => {
+        // Fallback: If native playback encounters format error, try mpegtsPlayer if .ts stream
+        if (window.mpegts && window.mpegts.isSupported() && !mpegtsPlayer) {
+          try {
+            mpegtsPlayer = window.mpegts.createPlayer({
+              type: 'mpegts',
+              isLive: false,
+              url: proxiedUrl
+            }, {
+              enableWorker: false,
+              enableStashBuffer: false,
+              stashInitialSize: 128 * 1024,
+              autoCleanupSourceBuffer: true,
+            });
+            mpegtsPlayer.attachMediaElement(videoEl);
+            mpegtsPlayer.load();
+            mpegtsPlayer.play().catch(() => { });
+          } catch (e) { }
+        }
+      };
+
+      const playPromise = videoEl.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(() => {
+          videoEl.muted = true;
+          videoEl.play().catch(() => { });
+        });
+      }
+    } else {
+      // Live TV Playback
+      const preferNative = state.prefs.tvPlayer === 'Native';
+      const mpegtsSupported = Boolean(window.mpegts && window.mpegts.isSupported());
+
+      if (!preferNative && mpegtsSupported) {
+        try {
           mpegtsPlayer = window.mpegts.createPlayer({
             type: 'mpegts',
             isLive: true,
@@ -3481,7 +3521,10 @@
           });
 
           mpegtsPlayer.on(window.mpegts.Events.ERROR, (errType, errDetail) => {
-            document.getElementById('lv-stream-info').textContent = `Stream notice: ${errDetail || errType} — Click channel again to retry`;
+            console.warn('mpegts error, falling back to native HTML5 video:', errType, errDetail);
+            destroyMpegtsPlayer();
+            videoEl.src = proxiedUrl;
+            videoEl.play().catch(() => { });
           });
 
           mpegtsPlayer.load();
@@ -3492,12 +3535,24 @@
               videoEl.play().catch(() => { });
             });
           }
-        } else {
+        } catch (e) {
+          console.warn('mpegts creation error, using native video:', e);
+          destroyMpegtsPlayer();
           videoEl.src = proxiedUrl;
           videoEl.play().catch(() => { });
         }
+      } else {
+        videoEl.src = proxiedUrl;
+        const playPromise = videoEl.play();
+        if (playPromise && playPromise.catch) {
+          playPromise.catch(() => {
+            videoEl.muted = true;
+            videoEl.play().catch(() => { });
+          });
+        }
       }
     }
+  }
 
     async function loadShortEpg(chId) {
       const nextStrip = document.getElementById('lv-nextstrip');
