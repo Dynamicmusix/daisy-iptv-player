@@ -2528,7 +2528,10 @@
           </div>
           <div class="field-group">
             <label>MAC Address *</label>
-            <input type="text" id="np-mac" class="field-input focusable" placeholder="00:1A:79:00:00:00" />
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="np-mac" class="field-input focusable" placeholder="00:1A:79:00:00:00" style="flex:1;" />
+              <button type="button" id="np-mac-clear" class="btn focusable" style="padding:0 14px;border-radius:14px;font-size:13px;white-space:nowrap;" onclick="document.getElementById('np-mac').value='';document.getElementById('np-mac').focus();">✕ Clear</button>
+            </div>
             <span id="lbl-error-mac" style="color:#ff453a;font-size:12px;display:none;">Error! MAC is not valid.</span>
           </div>
         </div>
@@ -2704,7 +2707,7 @@
       id: 'profile-default',
       name: 'My IPTV Portal',
       host: '',
-      mac: '00:1A:79:00:00:00',
+      mac: '',
       stbType: 'MAG250',
       serial: '',
       deviceId1: '',
@@ -2799,6 +2802,30 @@
         hiddenGenres: state.hiddenGenres,
         lastChannelId: state.lastChannelId
       }));
+    } catch (e) {}
+    syncSettingsLabels();
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.profiles && Array.isArray(parsed.profiles) && parsed.profiles.length > 0) {
+          state.profiles = parsed.profiles.map(p => {
+            if (p.mac === '00:1A:79:00:00:00' && (!p.host || p.host === '')) {
+              p.mac = '';
+            }
+            return p;
+          });
+        }
+        if (parsed.activeProfileId) state.activeProfileId = parsed.activeProfileId;
+        if (parsed.prefs) Object.assign(state.prefs, parsed.prefs);
+        if (parsed.favChannels) state.favChannels = parsed.favChannels;
+        if (parsed.favVod) state.favVod = parsed.favVod;
+        if (parsed.hiddenGenres) state.hiddenGenres = parsed.hiddenGenres;
+        if (parsed.lastChannelId) state.lastChannelId = parsed.lastChannelId;
+      }
     } catch (e) {}
     syncSettingsLabels();
   }
@@ -4278,7 +4305,7 @@
       window._editingProfileId = p ? p.id : null;
       document.getElementById('np-name').value = p ? p.name : '';
       document.getElementById('np-host').value = p ? p.host : '';
-      document.getElementById('np-mac').value = p ? p.mac : '00:1A:79:00:00:00';
+      document.getElementById('np-mac').value = p ? (p.mac === '00:1A:79:00:00:00' && !p.host ? '' : (p.mac || '')) : '';
       const stb = p ? p.stbType : 'MAG250';
       setTvSelectValue('stbtype', stb);
       document.getElementById('np-serial').value = p ? (p.serial || '') : '';
@@ -4594,8 +4621,12 @@
     INFO: 457, GUIDE: 458
   };
 
+  function isHardwareBackKey(code) {
+    return code === TV_KEY.RETURN || code === TV_KEY.ESC || code === TV_KEY.WEBOS_BACK;
+  }
+
   function isBackKey(code) {
-    return code === TV_KEY.RETURN || code === TV_KEY.ESC || code === TV_KEY.BACKSPACE || code === TV_KEY.WEBOS_BACK;
+    return isHardwareBackKey(code) || code === TV_KEY.BACKSPACE;
   }
 
   function registerTizenKeys() {
@@ -4840,10 +4871,19 @@
     const activeEl = document.activeElement;
     const activeTag = activeEl?.tagName;
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag)) {
-      if (isBackKey(code)) {
+      // Hardware Return/Back (10009, 27, 461) exits the field
+      if (isHardwareBackKey(code)) {
         e.preventDefault();
         activeEl.blur();
         return;
+      }
+
+      // Inside text inputs & textareas, allow native Backspace (8) character deletion!
+      // Do NOT preventDefault() or blur() so the character is erased normally.
+      if (code === TV_KEY.BACKSPACE) {
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+          return;
+        }
       }
 
       // Single-line inputs (e.g. np-name, np-host, np-mac):
