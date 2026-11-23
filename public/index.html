@@ -129,7 +129,7 @@
       height: 100%;
       border-radius: 0;
       border: none;
-      z-index: 0;
+      z-index: 50;
     }
 
     /* In other views when not in live TV */
@@ -168,9 +168,11 @@
       background: linear-gradient(180deg, rgba(5,14,24,0.7) 0%, rgba(5,14,24,0.95) 100%);
     }
 
+    body.in-player .stb-canvas-bg,
     body.in-live .bg,
     body.in-player .bg {
       opacity: 0;
+      pointer-events: none;
     }
 
     /* ===================== STALKER FOCUS & ACTIVE STATES ===================== */
@@ -1524,7 +1526,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      z-index: 60;
+      z-index: 100;
       background: linear-gradient(180deg, rgba(14, 38, 66, 0.92) 0%, rgba(6, 18, 32, 0.98) 100%);
       border-top: 3px solid var(--stb-yellow);
       box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.85);
@@ -1729,7 +1731,7 @@
 <body>
 
   <!-- 1. VIDEO PLANE -->
-  <div id="video-plane">
+  <div id="video-plane" ondblclick="togglePlayerFullscreen()" onclick="if(!document.body.classList.contains('in-player'))enterFullscreenPlayer()">
     <video id="daisy-video" playsinline></video>
   </div>
 
@@ -3243,6 +3245,16 @@
     async function playTvChannel(chId) {
       const ch = state.tvChannels.find(c => String(c.id) === String(chId));
       if (!ch || (ch.name && ch.name.includes('#####'))) return;
+
+      // Authentic Stalker MAG behavior: pressing OK on the already playing channel expands directly to Fullscreen
+      if (state.activeChannel && String(state.activeChannel.id) === String(ch.id) && !document.body.classList.contains('in-player')) {
+        const v = document.getElementById('daisy-video');
+        if (v && (v.currentTime > 0 || !v.paused)) {
+          enterFullscreenPlayer();
+          return;
+        }
+      }
+
       state.activeChannel = ch;
       state.lastChannelId = ch.id;
       saveState();
@@ -3898,11 +3910,26 @@
     function enterFullscreenPlayer() {
       document.body.classList.add('in-player');
       wakeOsd();
+      try {
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => { });
+        }
+      } catch (e) { }
     }
 
     function exitFullscreenPlayer() {
       document.body.classList.remove('in-player');
-      if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => { });
+      }
+    }
+
+    function togglePlayerFullscreen() {
+      if (document.body.classList.contains('in-player')) {
+        exitFullscreenPlayer();
+      } else {
+        enterFullscreenPlayer();
+      }
     }
 
     function wakeOsd() {
@@ -4971,6 +4998,13 @@
     if (code === TV_KEY.BLUE) {
       e.preventDefault();
       openModal('menu-settings');
+      return;
+    }
+
+    // Keyboard 'F' key: Toggle Fullscreen
+    if (code === 70 && (!document.activeElement || (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA'))) {
+      e.preventDefault();
+      togglePlayerFullscreen();
       return;
     }
 
